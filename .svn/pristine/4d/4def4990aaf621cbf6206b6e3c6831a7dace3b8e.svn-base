@@ -1,0 +1,278 @@
+{
+	"easycom": {
+		"^u-(.*)": "@/uview-ui/components/u-$1/u-$1.vue"
+	},
+	"pages": [{
+			"path": "pages/startpage/startpage",
+			"style": {}
+		},
+		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "首页",
+				"onReachBottomDistance": 50,
+				"disableScroll": true, // 禁止原生页面滚动,
+				"enablePullDownRefresh": false
+
+			}
+		}, {
+			"path": "pages/public/public",
+			"style": {
+				"navigationBarTitleText": "公告列表",
+				"onReachBottomDistance": 50,
+				"disableScroll": true, // 禁止原生页面滚动,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/public/newpublic",
+			"style": {
+				"navigationBarTitleText": "新增公告",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/public/newpublic2",
+			"style": {
+				"navigationBarTitleText": "新增公告",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/public/public2",
+			"style": {
+				"navigationBarTitleText": "公告列表",
+				"onReachBottomDistance": 50,
+				"disableScroll": true, // 禁止原生页面滚动,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/public/detail",
+			"style": {
+				"navigationBarTitleText": "公告详情",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/public/range",
+			"style": {
+				"navigationBarTitleText": "通知范围",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/public/publicList",
+			"style": {
+				"navigationBarTitleText": "公告列表",
+				"onReachBottomDistance": 50,
+				"disableScroll": true, // 禁止原生页面滚动,
+				"enablePullDownRefresh": false
+			}
+
+		},
+		{
+			"path": "pages/problem/list",
+			"style": {
+				"navigationBarTitleText": "问题明细",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+
+		}
+
+		, {
+			"path": "pages/process/process",
+			"style": {
+				"navigationBarTitleText": "人员执行流程",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/task/task",
+			"style": {
+				"navigationBarTitleText": "任务",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		}
+
+		, {
+			"path": "pages/task/standard",
+			"style": {
+				"navigationBarTitleText": "任务标准",
+				"onReachBottomDistance": 50,
+				"disableScroll": true, // 禁止原生页面滚动,
+				"enablePullDownRefresh": false
+			}
+		}, {
+			"path": "pages/task/detail",
+			"style": {
+				"navigationBarTitleText": "任务明细",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/task/score",
+			"style": {
+				"navigationBarTitleText": "评分项",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/recycle/recycle",
+			"style": {
+				"navigationBarTitleText": "回收站",
+				"onReachBottomDistance": 50,
+				"disableScroll": true, // 禁止原生页面滚动,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/exam/administer",
+			"style": {
+				"navigationBarTitleText": "考试管理",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/exam/testbase",
+			"style": {
+				"navigationBarTitleText": "考试题库",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/exam/publish",
+			"style": {
+				"navigationBarTitleText": "发布考试",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/exam/subject",
+			"style": {
+				"navigationBarTitleText": "新增试题",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/exam/edit",
+			"style": {
+				"navigationBarTitleText": "编辑试题",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/exam/practice",
+			"style": {
+				"navigationBarTitleText": "考试练习",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/exam/center",
+			"style": {
+				"navigationBarTitleText": "考试中心",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+
+		{
+			"path": "pages/exam/mistake",
+			"style": {
+				"navigationBarTitleText": "错题",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/exam/paper",
+			"style": {
+				"navigationBarTitleText": "试卷",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+
+		{
+			"path": "pages/exam/more",
+			"style": {
+				"navigationBarTitleText": "我发布的考试",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/exam/detail",
+			"style": {
+				"navigationBarTitleText": "详情",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/exam/result",
+			"style": {
+				"navigationBarTitleText": "考试结果",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/exam/exam",
+			"style": {
+				"navigationBarTitleText": "考试",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		}
+	],
+	/* 重力感应、横竖屏配置 */
+	"orientation": [
+		//竖屏正方向
+		"portrait-primary",
+		//竖屏反方向
+		"portrait-secondary",
+		//横屏正方向
+		"landscape-primary",
+		//横屏反方向
+		"landscape-secondary"
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"navigationStyle": "custom",
+		"backgroundColor": "#F8F8F8",
+		"app-plus": {
+			"bounce": "none" // 取消APP端iOS回弹
+		},
+		"mp-alipay": {
+			"allowsBounceVertical": "NO"
+		}, // 取消支付宝和钉钉小程序的iOS回弹
+		"rpxCalcMaxDeviceWidth": 690,
+		"rpxCalcBaseDeviceWidth": 375,
+		"rpxCalcIncludeWidth": 690
+	}
+}

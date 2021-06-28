@@ -1,0 +1,775 @@
+<template>
+	<view class="exam">
+		<a-head :showBack="false" bgColor='#4abdb4' text="xxx考试"></a-head>
+		<view class="header" id="header" :class="ipadflag?'ipadw':''">
+			<view class="header-left">第{{currentIndex+1}}/{{questionList.length}} 题</view>
+			<view class="header-right">
+				<view class="question" @click="question()">
+					答题卡
+				</view>
+			</view>
+		</view>
+		<view id="subHeader" :class="ipadflag?'ipads':''">
+			<view class="sub-header" v-if='questionList.length>0'>
+				<view class="left" v-if="questionList[currentIndex]">
+					<view class="line"></view>
+					<view class='sub-header-type' v-if='questionList[currentIndex].type==1'>判断题</view>
+					<view class='sub-header-type' v-if='questionList[currentIndex].type==2'>选择题</view>
+					<view class='sub-header-type' v-if='questionList[currentIndex].type==3'>多选题</view>
+					<view class='sub-header-number'>({{questionList[currentIndex].score}}分/题 <text>共10题</text>)</view>
+				</view>
+				<view class="sub-right">
+					<u-icon name="hourglass-half-fill" color="#19be6b" size="32"></u-icon>
+					<u-count-down ref="uCountDown" :timestamp="timestamp" :autoplay="false" :show-days="false"
+						@change="change" @end="end"></u-count-down>
+				</view>
+			</view>
+		</view>
+		<swiper class="content" :duration='duration' :current='currentIndex' @change='handleSwiperChanged'
+			v-if='questionList.length>0' :style="{'height':swiperHeight}" :class="ipadflag?'ipads':''">
+			<template v-for='item in questionList'>
+				<swiper-item class="content-item">
+					<scroll-view scroll-y :style="{'height':swiperHeight}">
+						<view class="content-title">
+							{{item.title}}
+						</view>
+						<view class="content-solutions" v-if='item.type == 1'>
+							<template v-for='subItem in item.optionList'>
+								<view class="content-solutions-item"
+									:class="item.userAnswer == subItem.id? 'selectchoose' : ''">
+									<view :class="item.userAnswer == subItem.id? 'content-solutions-item-select' : ''"
+										class="content-solutions-item-check-content"
+										@click='chooseSolution(item,subItem)'>{{subItem.content}}</view>
+								</view>
+							</template>
+						</view>
+						<view class="content-solutions" v-if='item.type == 2'>
+							<template v-for='subItem in item.optionList'>
+								<view class="content-solutions-item" @click='chooseSolution(item,subItem)'
+									:class="item.userAnswer == subItem.id? 'select' : ''">
+									<view class="content-solutions-item-single">{{subItem.id}}</view>
+									<view :class="item.userAnswer == subItem.id? 'content-solutions-item-select' : ''"
+										class="content-solutions-item-content">{{subItem.content}}</view>
+								</view>
+							</template>
+						</view>
+						<view class="content-solutions" v-if='item.type == 3'>
+							<template v-for='subItem in item.optionList'>
+								<view class="content-solutions-item" @click='chooseMutiSolution(item,subItem)'
+									:class="item.userAnswer.indexOf(subItem.id)> -1? 'select' : ''">
+									<view class="content-solutions-item-single">{{subItem.id}}</view>
+									<view
+										:class="item.userAnswer.indexOf(subItem.id)> -1? 'content-solutions-item-select' : ''"
+										class="content-solutions-item-content">{{subItem.content}}</view>
+								</view>
+							</template>
+						</view>
+						<view class="according" v-if="item.according">
+							题目依据：{{item.according}}
+						</view>
+					</scroll-view>
+				</swiper-item>
+			</template>
+		</swiper>
+		<view class="footer" id="footer" :class="ipadflag?'ipadw':''">
+			<view class="footer-back" @click='handleChangeCurrentSwiper(-1)' v-if="currentIndex>0">上一题</view>
+			<view class="footer-back gray" v-else>上一题</view>
+			<view class="footer-card">
+				<u-button type="success" @click='handleSubmit'>提交试卷</u-button>
+			</view>
+			<view class="footer-right" @click='handleChangeCurrentSwiper(1)'
+				v-if="(currentIndex+1)<questionList.length">下一题</view>
+			<view class="footer-right gray" v-else>下一题</view>
+		</view>
+		<!-- 确认提交 -->
+		<u-modal v-model="showSubmit" @confirm="submitconfirm" :async-close="true" :show-cancel-button="true"
+			:confirm-style="{ color: '#19be6b' }" :show-title="false">
+			<view class="slot-content">
+				<view class="model">
+					<view class="stop">您确定要提交吗？</view>
+					<view class="tips" v-if="respondence!==''">题目<text>{{respondence}}</text>题尚未作答！</view>
+					<view class="tips" v-else>题目已全部作答</view>
+				</view>
+			</view>
+		</u-modal>
+		<!-- 温馨提示 -->
+		<u-modal v-model="showTips" @confirm="tipsconfirm" @cancel="tipscancel" :async-close="true"
+			:show-cancel-button="true" :confirm-style="{ color: '#19be6b' }" title="考试说明" confirm-text="开始考试"
+			cancel-text="取消考试">
+			<view class="slot-content">
+				<view class="model">
+					<view class="start">请在规定时间内提交试卷完成考试</view>
+					<view class="start">考试过程中请保持网络连接，考试中途退出成绩将记为0</view>
+				</view>
+			</view>
+		</u-modal>
+		<!-- 答题卡 -->
+		<u-popup mode="center" v-model="showQuestion" width="80%" height="60%" border-radius='20'>
+			<view class="pop">
+				<view class="title">
+					答题卡
+				</view>
+				<scroll-view scroll-y="true" class="sroll">
+					<view class="content">
+						<view v-for="(item,index) in questionList" :key="index" class="option">
+							<view class="circle" :class="item.userAnswer==''?'':'blue'"
+								@click="handleJumpSwiper(index)">
+								{{index+1}}
+							</view>
+						</view>
+					</view>
+				</scroll-view>
+			</view>
+		</u-popup>
+
+		<!-- 考试结果 -->
+		<u-modal v-model="resultShow" :show-confirm-button="false" title="考试结果">
+			<view class="slot-content">
+				<view class="model ">
+					<view class="bgmodel">
+						<view class="result">考试得分：59</view>
+						<view class="result">合格分值：60</view>
+						<!-- <view class="result">考试结果：<text class="green">合格</text></view> -->
+						<view class="result">考试结果：<text class="red">不合格</text></view>
+					</view>
+					<view class="action">
+						<u-button type="success" size="medium " @click="finish()">完成考试</u-button>
+						<u-button type="warning" size="medium " @click="again()">重考</u-button>
+					</view>
+				</view>
+			</view>
+		</u-modal>
+		<!-- 消息提示 -->
+		<u-toast ref="uToast" />
+		<!--页面加载动画-->
+		<rfLoading :active="loading"></rfLoading>
+
+	</view>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				currentIndex: 0,
+				swiperHeight: 0,
+				modalHeight: '',
+				modalContentHeight: '',
+				showQuestion: false,
+				currentSwiperItem: 0,
+				duration: 300,
+				showSubmit: false,
+				respondence: '',
+				timestamp: 360,
+				loading: false,
+				showTips: false,
+				showOut: false,
+				ipadflag: false,
+				resultShow: false,
+				questionList: [{
+						"id": 652,
+						"title": "黄金持续上涨，因此2020年鼠年金币的发行价格相对去年上涨30%是合理的",
+						"answer": "B",
+						according: '这是题目依据这是题目依据',
+						"type": 1,
+						"score": "5",
+						"optionList": [{
+								"optionId": 2469,
+								"id": "A",
+								"questionId": 652,
+								"content": "正确",
+
+								"type": 1,
+							},
+							{
+								"optionId": 2470,
+								"id": "B",
+								"questionId": 652,
+								"content": "错误",
+								"type": 1,
+							}
+						],
+						"userAnswer": ""
+					},
+					{
+						"id": 541,
+						"title": "1931年在中华苏维埃第一次全国代表大会上，（）受命在江西瑞金筹建了第一家共和国国家银行——中华苏维埃共和国国家银行，并任行长。",
+						"answer": "B",
+						"type": 2,
+						"score": "5",
+						according: '',
+						"optionList": [{
+								"optionId": 2045,
+								"id": "A",
+								"questionId": 541,
+								"content": "习仲勋",
+								"type": 2,
+							},
+							{
+								"optionId": 2046,
+								"id": "B",
+								"questionId": 541,
+								"content": "毛泽民",
+								"type": 2,
+							},
+							{
+								"optionId": 2047,
+								"id": "C",
+								"questionId": 541,
+								"content": "刘志丹",
+								"type": 2,
+							},
+							{
+								"optionId": 2048,
+								"id": "D",
+								"questionId": 541,
+								"content": "毛泽东",
+								"type": 2,
+							}
+						],
+						"userAnswer": ""
+					},
+					{
+						"id": 685,
+						"title": "铜质熊猫纪念币的发行年份分别是哪几年？（）",
+						"answer": "ABC",
+						according: '这是题目依据这是题目依据',
+						"type": 3,
+						"score": "10",
+						"optionList": [{
+								"optionId": 2543,
+								"id": "A",
+								"questionId": 685,
+								rado: "0",
+								"content": "1983年",
+								"type": 3,
+							},
+							{
+								"optionId": 2544,
+								"id": "B",
+								"questionId": 685,
+								rado: "0",
+								"content": "1984年",
+								"type": 3,
+							},
+							{
+								"optionId": 2545,
+								"id": "C",
+								"questionId": 685,
+								rado: "1",
+								"content": "1985年",
+								"type": 3,
+							},
+							{
+								"optionId": 2546,
+								"id": "D",
+								"questionId": 685,
+								rado: "1",
+								"content": "1986年",
+								"type": 3,
+							}
+						],
+						"userAnswer": ""
+					},
+				]
+			}
+		},
+		watch: {
+			currentSwiperItem(val) {
+				this.currentIndex = val
+			}
+		},
+		onLoad() {
+			this.loading = true;
+		},
+		onShow() {
+			let _this = this;
+			const {
+				windowWidth,
+				windowHeight,
+				brand,
+				model
+			} = uni.getSystemInfoSync();
+			let ratio = windowHeight / windowWidth;
+			if (windowWidth > 600 && ratio < 1.7 && windowHeight > 600 || brand == "HUAWEI" && model == "BAH3-W59") {
+				_this.ipadflag = true;
+			} else {
+				_this.ipadflag = false;
+			}
+			uni.onNetworkStatusChange(function(res) {
+				if (!res.isConnected) {
+					uni.showToast({
+						title: '网络已断开',
+						icon: 'none'
+					});
+					setTimeout(() => {
+						uni.navigateBack({
+							delta: 1
+						})
+					}, 500)
+				}
+			});
+		},
+		mounted() {
+			setTimeout(() => {
+				this.loading = false;
+				this.showTips = true;
+			}, 500)
+			this.setAnswerHeight()
+		},
+
+		methods: {
+			//设置题目的高度
+
+			setAnswerHeight() {
+				let that = this
+				let tempHeight = 0
+				uni.getSystemInfo({
+					//获取手机屏幕高度信息，让swiper的高度和手机屏幕一样高                
+					success: function(res) {
+						tempHeight = res.windowHeight;
+						that.modalHeight = res.windowHeight - uni.upx2px(200) + 'px';
+						that.modalContentHeight = res.windowHeight - uni.upx2px(380) + 'px';
+						uni.createSelectorQuery().select("#header").fields({
+							size: true,
+							scrollOffset: true
+						}, (data) => {
+							tempHeight -= data.height;
+							uni.createSelectorQuery().select("#subHeader").fields({
+								size: true,
+								scrollOffset: true
+							}, (data) => {
+								tempHeight -= data.height;
+								uni.createSelectorQuery().select("#footer").fields({
+									size: true,
+									scrollOffset: true
+								}, (data) => {
+									tempHeight -= data.height;
+									that.swiperHeight = (tempHeight - 80) + 'px';
+								}).exec();
+							}).exec();
+						}).exec();
+					}
+				});
+			},
+			//温馨提示
+			tipsconfirm() {
+				this.showTips = false;
+				this.$refs.uCountDown.start();
+			},
+			tipscancel() {
+				this.showTips = false;
+				uni.navigateBack({
+					delta: 1
+				})
+			},
+			// 答题卡
+			question() {
+				this.showQuestion = true;
+			},
+			//跳转指定题目
+			handleJumpSwiper(index) {
+				this.currentIndex = index;
+				this.showQuestion = false;
+			},
+			// 滑动题目 
+			handleSwiperChanged(event) {
+				this.currentIndex = event.detail.current
+			},
+			//调用上一页，下一页
+			handleChangeCurrentSwiper(operation) {
+				let max = this.questionList.length - 1
+				let min = 0
+				if ((this.currentIndex > min && operation < 0) || (this.currentIndex < max && operation > 0)) {
+					this.currentIndex += operation
+				}
+			},
+			//选择答案（单选，判断）
+
+			chooseSolution(item, subItem) {
+				item.userAnswer = subItem.id
+				this.currentIndex += 1
+			},
+			// 选择答案（多选）
+			chooseMutiSolution(item, subItem) {
+				let newAnswer = JSON.parse(JSON.stringify(item.userAnswer))
+				if (newAnswer.indexOf(subItem.id) > -1) {
+					newAnswer = newAnswer.replace(subItem.id, '')
+				} else {
+					newAnswer += subItem.id
+				}
+				let splitArray = newAnswer.split('')
+				let noFormString = splitArray.sort().toString().replace(/,/g, '')
+				item.userAnswer = noFormString
+			},
+			//提交			 
+			handleSubmit() {
+				this.respondence = '';
+				let arr = [];
+				this.questionList.map((item, index) => {
+					if (item.userAnswer == '') {
+						arr.push(index + 1)
+					}
+				})
+				this.respondence = arr.toString();
+				this.showSubmit = true;
+			},
+			// 确定提交
+			submitconfirm() {
+				// let result = JSON.parse(JSON.stringify(this.questionList))
+				// console.log(result,'result')
+				this.showSubmit = false;
+				this.resultShow = true;
+			},
+			// 完成考试
+			finish() {
+				uni.navigateBack({
+					delta: 1
+				})
+			},
+			//重考
+			again() {
+				this.resultShow = false;
+				this.showTips = true;
+			},
+
+			// 倒计时
+			change(timestamp) {
+				if (timestamp == 60) {
+					this.$refs.uToast.show({
+						title: '温馨提示：考试时间剩余最后一分钟',
+						type: 'warning'
+					});
+				}
+			},
+			end() {
+				this.$refs.uToast.show({
+					title: '考试时间已到，系统已自动为你提交试卷',
+					type: 'warning'
+				});
+				this.submitconfirm();
+			}
+		}
+	}
+</script>
+
+<style lang="less" scoped>
+	.exam {
+		background-color: #FFFFFF;
+		min-height: 100vh;
+	}
+
+	.model {
+		padding: 30rpx;
+
+		.bgmodel {
+			border: 1px solid #dbf1e1;
+			background: #f6fcfb;
+			border-radius: 10rpx;
+			padding: 20rpx;
+		}
+
+		.stop {
+			font-size: #333333;
+			line-height: 50rpx;
+			font-size: 32rpx;
+			margin: 20rpx 0;
+
+		}
+
+		.result {
+			font-size: #333333;
+			line-height: 50rpx;
+			font-size: 28rpx;
+			margin: 20rpx 0;
+
+			.green {
+				font-size: 30rpx;
+				color: #19be6b;
+			}
+
+			.red {
+				font-size: 30rpx;
+				color: #FA3534;
+			}
+
+		}
+
+		.start {
+			font-size: 30rpx;
+			color: #666666;
+			line-height: 50rpx;
+			margin-bottom: 20rpx;
+
+		}
+
+		.action {
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
+			padding-top: 20rpx;
+		}
+
+		.tips {
+			font-size: 28rpx;
+			color: #999999;
+
+			text {
+				color: #fa3534;
+				margin: 0 10rpx;
+				font-size: 30rpx;
+			}
+		}
+	}
+
+	#header,
+	#subHeader {
+		height: 100rpx;
+	}
+
+	.header {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0 20rpx;
+		border-bottom: 1px solid #eeeeee;
+
+		.header-button {
+			width: auto;
+			height: 40rpx;
+			line-height: 40rpx;
+			padding: 10rpx 20rpx;
+			border-radius: 10rpx;
+			letter-spacing: 2rpx;
+			color: #f4f4f5;
+			background-color: #19be6b;
+		}
+
+		.header-left {
+			font-size: 34rpx;
+			color: #19be6b;
+			font-weight: 600;
+		}
+
+		.header-right {
+			font-size: 30rpx;
+			color: #8a8a8a;
+			display: flex;
+			align-items: center;
+
+			.question {
+				width: 120rpx;
+				height: 60rpx;
+				line-height: 60rpx;
+				text-align: center;
+				font-size: 28rpx;
+				color: #FFFFFF;
+				background: #19be6b;
+				border-radius: 10rpx;
+			}
+		}
+	}
+
+	.sub-header {
+		padding: 30rpx 20rpx;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		color: #333333;
+
+		.left {
+			display: flex;
+			align-items: center;
+			justify-content: flex-start;
+		}
+
+		.line {
+			width: 12rpx;
+			height: 40rpx;
+			line-height: 40rpx;
+			border-radius: 10rpx;
+			background: #39b54a;
+			margin-right: 10rpx;
+		}
+
+
+		.sub-header-number {
+			color: #999999;
+			padding-left: 10rpx;
+			font-size: 30rpx;
+			text{
+				padding-left: 20rpx;
+				padding-right: 10rpx;
+			}
+		}
+
+		.sub-right {
+			font-size: 30rpx;
+			color: #19be6b;
+			display: flex;
+		}
+
+	}
+
+	.content {
+		letter-spacing: 3rpx;
+		.according{
+			color: #999999;
+			line-height: 50rpx;
+			font-size: 28rpx;
+			font-style: italic;
+		}
+
+		.content-item {
+			padding: 0 20rpx;
+			box-sizing: border-box;
+		}
+
+		.content-title {
+			margin-bottom: 30rpx;
+			font-size: 30rpx;
+			line-height: 50rpx;
+			color: #333333
+		}
+
+		.content-solutions {
+			width: 100%;
+			padding-bottom: 20rpx;
+
+			.content-solutions-item {
+				margin: 60rpx 0;
+				border-radius: 10rpx;
+				display: flex;
+				align-items: center;
+				font-size: 30rpx;
+				background: #f4f4f5;
+				border: 1px solid #f4f4f5;
+
+				.content-solutions-item-check-content {
+					padding: 20rpx;
+					border-radius: 10rpx;
+					width: 100%;
+					flex: 1;
+					color: #333333;
+
+
+				}
+
+				.content-solutions-item-single {
+					width: 80rpx;
+					text-align: center;
+					color: #333333;
+
+				}
+
+				.content-solutions-item-content {
+					padding: 20rpx;
+					width: 100%;
+					flex: 1;
+					border-top-right-radius: 8rpx;
+					border-bottom-right-radius: 8rpx;
+					color: #333333;
+					background-color: #f4f4f5;
+
+				}
+
+				.content-solutions-item-select {
+					color: #FFFFFF;
+					background: #19be6b;
+				}
+			}
+
+			.select {
+				background: #dbf1e1;
+				border: 1px solid #19be6b;
+				box-shadow: 0 5rpx 5rpx rgba(0, 0, 0, .2);
+			}
+
+			.selectchoose {
+				background: #19be6b;
+				border: 1px solid #19be6b;
+				box-shadow: 0 5rpx 5rpx rgba(0, 0, 0, .2);
+			}
+		}
+	}
+
+	.footer {
+		width: 100%;
+		height: 100rpx;
+		padding: 30rpx 20rpx;
+		position: fixed;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		bottom: 0;
+		font-size: 30rpx;
+		box-sizing: border-box;
+		color: #19be6b;
+		box-shadow: 0 -5rpx 5rpx rgba(0, 0, 0, .3);
+		background: #FFFFFF;
+
+		.gray {
+			color: #C8C9CC;
+		}
+
+	}
+
+	.ipadw {
+		padding-left: 30rpx;
+		padding-right: 30rpx;
+	}
+
+	.ipads {
+		padding-left: 40rpx;
+		padding-right: 40rpx;
+	}
+
+	.pop {
+		padding: 20rpx;
+
+		.sroll {
+			height: 50vh;
+		}
+
+		.title {
+			text-align: center;
+			color: #333333;
+			height: 80rpx;
+			line-height: 80rpx;
+			font-size: 32rpx;
+			letter-spacing: 6rpx;
+
+		}
+
+		.content {
+			width: 100%;
+			display: flex;
+			align-items: center;
+			justify-content: flex-start;
+			flex-wrap: wrap;
+			border-top: 1px solid #EEEEEE;
+
+			.option {
+				margin: 20rpx 16rpx;
+
+				.circle {
+					width: 80rpx;
+					height: 80rpx;
+					line-height: 80rpx;
+					border-radius: 40rpx;
+					color: #909399;
+					font-size: 28rpx;
+					text-align: center;
+					background: #F3F4F6;
+
+				}
+
+				.blue {
+					background: #2979ff;
+					color: #FFFFFF;
+				}
+			}
+		}
+	}
+</style>

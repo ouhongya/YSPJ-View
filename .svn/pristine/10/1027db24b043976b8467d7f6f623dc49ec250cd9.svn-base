@@ -1,0 +1,634 @@
+<template>
+	<view class="main">
+		<a-head text="编辑试题" bgColor="#4abdb4"></a-head>
+		<swiper class="swiper" :current="currentIndex">
+			<swiper-item v-for="(item, index) in examlist" :key="index">
+				<scroll-view scroll-y="true" class="swiper">
+					<view class="content">
+						<u-form ref="uForm" :label-style="labelStyle" label-width="160">
+							<view class="range">
+								<u-cell-group>
+									<u-cell-item
+										title="所属题库"
+										:title-style="labelStyle"
+										:arrow="true"
+										arrow-direction="right"
+										:value="item.belong"
+										@click="toBelong()"
+									></u-cell-item>
+								</u-cell-group>
+							</view>
+							<u-form-item label="题目类型" class="form">
+								<u-radio-group v-model="item.typename" active-color="#4abdb4">
+									<u-radio v-for="(k, index4) in typeList" :key="index4" :name="k.name" :disabled="k.disabled">{{ k.name }}</u-radio>
+								</u-radio-group>
+							</u-form-item>
+							<view class="rangetitle"><u-input v-model="item.title" :border="true" placeholder="请输入题目标题" type="textarea" :auto-height="true" /></view>
+							<view class="range" v-if="item.type != 3">
+								<view class="list" v-for="(i, index1) in item.optionList" :key="index1">
+									<view class="option">{{ i.optionId }}</view>
+									<u-input v-model="i.content" :border="true" type="textarea" :auto-height="true" height="60" />
+								</view>
+							</view>
+							<u-form-item label="正确答案">
+								<!-- 单选 -->
+								<view class="" v-if="item.type == 1">
+									<u-radio-group v-model="item.answer" active-color="#4abdb4" @change="singleGroupChange($event, index)">
+										<u-radio v-for="(j, index3) in singleList" :key="index3" :name="j.name" :disabled="j.disabled">{{ j.name }}</u-radio>
+									</u-radio-group>
+								</view>
+								<!-- 多选 -->
+								<view class="" v-if="item.type == 2">
+									<u-checkbox-group @change="checkboxGroupChange($event, index)" active-color="#4abdb4">
+										<u-checkbox v-model="j.checked" v-for="(j, index3) in checkboxList" :key="index3" :name="j.name">{{ j.name }}</u-checkbox>
+									</u-checkbox-group>
+								</view>
+								<view class="" v-if="item.type == 3">
+									<u-radio-group v-model="item.answer" active-color="#4abdb4" @change="judgeGroupChange($event, index)">
+										<u-radio v-for="(j, index3) in judgeList" :key="index3" :name="j.name" :disabled="j.disabled">{{ j.name }}</u-radio>
+									</u-radio-group>
+								</view>
+							</u-form-item>
+						</u-form>
+					</view>
+				</scroll-view>
+			</swiper-item>
+		</swiper>
+		<view class="action-bottom">
+			<view class="action">
+				<view class="cancel" @click="cancel()">取消</view>
+				<view class="submit" @click="save()" v-if="isFlag==1">保存</view>
+				<view class="submit grey"   v-if="isFlag==2">保存</view>
+			</view>
+		</view>
+		<!-- 所属题库选择 -->
+		<u-select v-model="belongShow" mode="single-column" :default-value="belongIndex" :list="belongList" @confirm="belongconfirm" confirm-color="#1fac9c"></u-select>
+		<!-- 消息提示 -->
+		<u-toast ref="uToast" />
+		<!--页面加载动画-->
+		<rfLoading :active="loading"></rfLoading>
+	</view>
+</template>
+<script>
+import { editOneTopic, queryOneTopic, queryQuestionBankListNotLimit } from '@/api/exam/testbase.js';
+export default {
+	data() {
+		return {
+			isFlag:null,
+			loading: false,
+			belongShow: false,
+			currentIndex: 0,
+			belongList: [
+				{
+					value: 1,
+					label: '默认分类'
+				},
+				{
+					value: 2,
+					label: 'xxx分类'
+				},
+				{
+					value: 3,
+					label: 'xxx分类1'
+				}
+			],
+			belongIndex: [0],
+			labelStyle: {
+				fontSize: '30rpx',
+				color: '#333333'
+			},
+			typeList: [
+				{
+					name: '单选',
+					disabled: false
+				},
+				{
+					name: '多选',
+					disabled: false
+				},
+				{
+					name: '判断',
+					disabled: false
+				}
+			],
+			checkboxList: [
+				{
+					name: 'A',
+					checked: false,
+					disabled: false
+				},
+				{
+					name: 'B',
+					checked: false,
+					disabled: false
+				},
+				{
+					name: 'C',
+					checked: false,
+					disabled: false
+				},
+
+				{
+					name: 'D',
+					checked: false,
+					disabled: false
+				}
+			],
+			singleList: [
+				{
+					name: 'A',
+					disabled: false
+				},
+				{
+					name: 'B',
+					disabled: false
+				},
+				{
+					name: 'C',
+					disabled: false
+				},
+
+				{
+					name: 'D',
+					disabled: false
+				}
+			],
+			judgeList: [
+				{
+					name: '正确',
+					disabled: false
+				},
+				{
+					name: '错误',
+					disabled: false
+				}
+			],
+			examlist: [
+				{
+					type: 1,
+					typename: '单选',
+					title: 'sghash',
+					answer: 'A',
+					belong: '默认题库',
+					optionList: [
+						{
+							optionId: 'A',
+							content: 'fdsfg'
+						},
+						{
+							optionId: 'B',
+							content: 'gdfg'
+						},
+						{
+							optionId: 'C',
+							content: 'gdfgh'
+						},
+						{
+							optionId: 'D',
+							content: 'gfdh'
+						}
+					]
+				}
+			]
+		};
+	},
+	created() {
+		this.loading = true;
+	},
+	onLoad(option) {
+		if (option.id !== undefined) {
+			this.isFlag = option.isFlag
+			queryQuestionBankListNotLimit().then(res => {
+				res.forEach(item => {
+					item.label = item.name;
+					item.value = item.id;
+				});
+				this.belongList = res;
+				queryOneTopic(option.id).then(res => {
+					let typename = '';
+					if (res.type == 1) {
+						this.typeList[1].disabled = true;
+						this.typeList[2].disabled = true;
+						typename = '单选';
+					} else if (res.type == 2) {
+						this.typeList[0].disabled = true;
+						this.typeList[2].disabled = true;
+						typename = '多选';
+					} else {
+						this.typeList[0].disabled = true;
+						this.typeList[1].disabled = true;
+						typename = '判断';
+					}
+					let singleList = [];
+					let checkboxList = [];
+					let arr = '';
+					let optionList = [];
+					res.answerList.forEach(item => {
+						singleList.push({
+							name: item.forder,
+							disabled: false
+						});
+						if (item.type == 0) {
+							arr += item.forder;
+						}
+						optionList.push({
+							id: item.id,
+							optionId: item.forder,
+							content: item.content
+						});
+						checkboxList.push({
+							id: item.id,
+							name: item.forder,
+							checked: item.type == 0 ? true : false,
+							disabled: false
+						});
+						if (typename == '判断') {
+							this.judgeList.forEach(entry => {
+								if (item.content == entry.name) {
+									entry.id = item.id;
+								}
+							});
+						}
+					});
+					if (typename == '判断') {
+						arr = arr == 'A' ? '正确' : '错误';
+					}
+					this.singleList = singleList;
+					this.checkboxList = checkboxList;
+					//题库
+					let examCategoryName = '';
+					this.belongList.forEach(item => {
+						if (item.value == res.examCategoryId) {
+							examCategoryName = item.label;
+						}
+					});
+					this.examlist = [
+						{
+							id: res.id,
+							type: res.type,
+							typename: typename,
+							title: res.stem,
+							answer: arr,
+							belong: examCategoryName,
+							optionList: optionList
+						}
+					];
+				});
+			});
+		}
+	},
+	mounted() {
+		setTimeout(() => {
+			this.loading = false;
+		}, 200);
+	},
+	methods: {
+		//多选答案
+		checkboxGroupChange(e, index) {
+			let str = JSON.stringify(e);
+			let answer = '';
+			if (str.indexOf('A') != -1) {
+				answer += 'A';
+			}
+			if (str.indexOf('B') != -1) {
+				answer += 'B';
+			}
+			if (str.indexOf('C') != -1) {
+				answer += 'C';
+			}
+			if (str.indexOf('D') != -1) {
+				answer += 'D';
+			}
+			this.examlist[index].answer = answer;
+		},
+		//单选答案
+		singleGroupChange(e, index) {
+			this.examlist[index].answer = e;
+		},
+		//判断答案
+		judgeGroupChange(e, index) {
+			this.examlist[index].answer = e;
+		},
+		//选择题库
+		toBelong() {
+			this.belongList.map((item, index) => {
+				if (item.label == this.examlist[0].belong) {
+					this.belongIndex = [index];
+				}
+			});
+			this.belongShow = true;
+		},
+		belongconfirm(e) {
+			this.examlist[0].belong = e[0].label;
+			this.belongShow = false;
+		},
+		// 取消
+		cancel() {
+			uni.navigateTo({
+				url: './testbase'
+			});
+		},
+		// 保存
+		save() {
+			//组装数据
+			let data = [];
+			let stemData = [];
+			this.examlist.forEach(item => {
+				let obj = {};
+				this.belongList.forEach(entry => {
+					if (item.belong == entry.label) {
+						obj.exam_category_id = entry.value;
+					}
+				});
+				let exam_batch_id = item.id;
+				obj.id = exam_batch_id;
+				obj.stem = item.title;
+				obj.type = item.type;
+				obj.exam_batch_id = 0;
+				obj.status = 0;
+				obj.user_id = uni.getStorageSync('USER_ID');
+				obj.created_time = new Date();
+				obj.last_update_time = new Date();
+				data.push(obj);
+				//隔开答案
+				let answer = item.answer.split('');
+				if (item.type != 3) {
+					item.optionList.forEach(entry => {
+						let stemObj = {};
+						stemObj.id = entry.id;
+						stemObj.exam_topic = exam_batch_id;
+						stemObj.forder = entry.optionId;
+						stemObj.type = answer.indexOf(entry.optionId) != -1 ? 0 : 1;
+						stemObj.content = entry.content;
+						stemData.push(stemObj);
+					});
+				} else {
+					item.optionList.forEach((entry, index) => {
+						if (index < 2) {
+							let stemObj = {};
+							stemObj.id = entry.id;
+							stemObj.exam_topic = exam_batch_id;
+							stemObj.forder = entry.optionId;
+							if (index == 0) {
+								item.answer == '正确' ? (stemObj.type = 0) : (stemObj.type = 1);
+							} else {
+								item.answer == '错误' ? (stemObj.type = 0) : (stemObj.type = 1);
+							}
+							stemObj.content = entry.optionId == 'A' ? '正确' : '错误';
+							stemData.push(stemObj);
+						}
+					});
+				}
+			});
+			editOneTopic(data, stemData).then(res => {
+				if (res == 'SUCCESS') {
+					uni.navigateTo({
+						url: './testbase?id='+[data[0].exam_category_id]+'&type=1'
+					});
+				} else {
+					this.$refs.uToast.show({
+						title: "题干重复,请重新编辑",
+						type: 'warning'
+					});
+				}
+			});
+		}
+	}
+};
+</script>
+
+<style lang="less" scoped>
+/deep/.u-cell {
+	padding: 10px 0;
+	line-height: 23px;
+}
+
+/deep/.u-radio {
+	line-height: inherit;
+}
+
+page {
+	background: #ffffff;
+}
+
+.swiper {
+	height: calc(100vh - 120px);
+	padding-bottom: 20rpx;
+}
+
+.main {
+}
+
+.tips {
+	color: #666666;
+	// text-align: center;
+	font-size: 28rpx;
+	padding: 20rpx 20rpx 0 30rpx;
+
+	text {
+		margin: 0 6rpx;
+		color: #4abdb4;
+	}
+}
+
+.top {
+	display: flex;
+	justify-content: flex-end;
+	right: 0;
+	position: absolute;
+	z-index: 999;
+	align-items: center;
+	padding: 0 30rpx;
+	height: 44px;
+	line-height: 44px;
+	flex-direction: column;
+
+	.right {
+		font-size: 30rpx;
+		color: #ffffff;
+	}
+}
+
+.content {
+	padding: 30rpx;
+
+	.form {
+		margin-bottom: 30rpx;
+		border-bottom: 1px solid #eeeeee;
+	}
+
+	.range {
+		width: 100%;
+		border-bottom: 1px solid #eeeeee;
+
+		.list {
+			display: flex;
+			justify-content: flex-start;
+			align-items: center;
+			margin-bottom: 20rpx;
+
+			.option {
+				padding-right: 20rpx;
+			}
+		}
+	}
+
+	.rangetitle {
+		width: 100%;
+		margin-bottom: 40rpx;
+	}
+
+	.submit {
+		width: 90%;
+	}
+}
+
+.action-bottom {
+	width: 100%;
+	bottom: 0;
+	position: fixed;
+	background: #ffffff;
+	padding: 20rpx 0;
+	border-top: 1px solid #eeeeee;
+
+	.action {
+		display: flex;
+		justify-content: space-between;
+		text-align: center;
+		color: #ffffff;
+		font-size: 32rpx;
+		height: 70rpx;
+		line-height: 70rpx;
+		align-items: center;
+		padding: 0 30rpx;
+
+		.cancel {
+			width: 45%;
+			border: 2rpx solid #e4e7ed;
+			color: #999999;
+			background: #ffffff;
+			border-radius: 40rpx;
+		}
+
+		.submit {
+			width: 45%;
+			background: #00b2a4;
+			border: 2rpx solid #00b2a4;
+			border-radius: 40rpx;
+		}
+		.grey {
+			background: #909399;
+			border: 2rpx solid #909399;
+		}
+	}
+}
+
+.Model {
+	.roleAction {
+		position: fixed;
+		bottom: 0;
+		height: 100rpx;
+		line-height: 100rpx;
+		display: flex;
+		justify-content: space-around;
+		align-items: center;
+		font-size: 32rpx;
+		width: 100%;
+		border-top: 2rpx solid #f6f6f6;
+		background: #ffffff;
+		z-index: 999;
+
+		.cancel {
+			width: 40%;
+			border: 2rpx solid #dedede;
+			color: #606266;
+			text-align: center;
+			height: 80rpx;
+			line-height: 80rpx;
+			border-radius: 80rpx;
+		}
+
+		.sure {
+			width: 40%;
+			color: #ffffff;
+			background: #4abdb4;
+			text-align: center;
+			height: 80rpx;
+			line-height: 80rpx;
+			border: 2rpx solid #4abdb4;
+			border-radius: 80rpx;
+		}
+	}
+
+	.toptitle {
+		height: 90rpx;
+		line-height: 90rpx;
+		background: #4abdb4;
+		color: #ffffff;
+		font-size: 34rpx;
+		text-align: center;
+		position: fixed;
+		top: 0rpx;
+		width: 100%;
+		z-index: 999;
+	}
+
+	.collapsePart {
+		padding: 100rpx 0;
+		background: #ffffff;
+		width: 100%;
+		position: relative;
+
+		.u-collapse-head {
+			display: flex;
+			justify-content: flex-start;
+			align-items: center;
+			color: #333333;
+			font-size: 28rpx;
+			line-height: 1;
+			padding: 10rpx 20rpx 10rpx 6rpx;
+			text-align: left;
+			padding-left: 60rpx;
+		}
+
+		.u-collapse-title {
+			flex: 1;
+			width: 100%;
+			line-height: 60rpx;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			-webkit-box-orient: vertical;
+		}
+
+		.u-arrow-down-icon {
+			transition: all 0.3s;
+			margin-right: 20rpx;
+			margin-left: 14rpx;
+		}
+
+		.u-arrow-down-icon-active {
+			transform: rotate(180deg);
+			transform-origin: center center;
+		}
+
+		.u-collapse-body {
+			overflow: scroll;
+			transition: all 0.3s;
+		}
+
+		.u-collapse-content {
+			font-size: 26rpx;
+			color: #666;
+			text-align: left;
+			padding-left: 120rpx;
+			width: 100%;
+
+			.scroll-part {
+				height: 50vh;
+			}
+		}
+	}
+}
+</style>

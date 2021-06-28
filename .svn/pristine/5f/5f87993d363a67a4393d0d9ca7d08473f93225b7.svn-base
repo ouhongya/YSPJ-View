@@ -1,0 +1,123 @@
+<template>
+	<view class="application">
+		<u-sticky :offset-top="offset">
+			<view class="top">
+				<view class="applist" @click="jump()">
+					<view class="imgPart">
+						<image src="../../static/whitepublic2.png" mode=""></image>
+					</view>
+					<view class="title">
+						公告
+					</view>
+				</view>
+				<view class="applist" @click="jumpExam()">
+					<view class="imgPart">
+						<image src="../../static/exam.png" mode=""></image>
+					</view>
+					<view class="title">
+						考试
+					</view>
+				</view>
+			</view>
+		</u-sticky>
+	</view>
+</template>
+
+<script>
+	export default {
+		props: {
+			offset: {
+				type: Number,
+				default: 0
+			},
+			netflag: {
+				type: Boolean,
+				default () {
+					return false;
+				}
+			},
+		},
+		data() {
+			return {
+				jumplock: false,
+				examlock: false
+			}
+		},
+		methods: {
+			jump() {
+				if (this.jumplock) return;
+				this.jumplock = true;
+				if (uni.getStorageSync("functionid") == 1) {
+					uni.navigateTo({
+						url: '../../pages/public/newpublic2'
+					})
+				} else {
+					uni.navigateTo({
+						url: '../../pages/public/publicList'
+					})
+				}
+				setTimeout(() => {
+					this.jumplock = false;
+				}, 500)
+			},
+			jumpExam() {
+				if (this.examlock) return;
+				this.examlock = true;
+				if (this.netflag) {
+					if (uni.getStorageSync("functionid") == 1) {
+						uni.navigateTo({
+							url: '../../pages/exam/administer'
+						})
+					} else {
+						uni.navigateTo({
+							url: '../../pages/exam/center'
+						})
+					}
+					
+				} else {
+					uni.showToast({
+						title: '考试需先连接网络',
+						icon: 'none'
+					});
+				}
+				setTimeout(() => {
+					this.examlock = false;
+				}, 500)
+			}
+		}
+	}
+</script>
+
+<style lang="less" scoped>
+	.top {
+		display: flex;
+		flex-wrap: wrap;
+	}
+
+	.applist {
+		padding: 60rpx 0 60rpx 100rpx;
+		width: 100rpx;
+
+		.imgPart {
+			width: 100rpx;
+			height: 100rpx;
+			border-radius: 50rpx;
+			background: #4abdb4;
+			text-align: center;
+			box-shadow: inset 0 0 16rpx #FFFFFF;
+
+			image {
+				width: 60rpx;
+				height: 60rpx;
+				margin-top: 20rpx;
+			}
+		}
+
+		.title {
+			color: #666666;
+			font-size: 30rpx;
+			margin-top: 10rpx;
+			text-align: center;
+		}
+	}
+</style>

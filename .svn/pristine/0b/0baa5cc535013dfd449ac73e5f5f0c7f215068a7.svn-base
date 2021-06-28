@@ -1,0 +1,113 @@
+import helper from '@/common/helper.js'
+
+/**
+ * 查询题库列表 
+ * @param {Object} page
+ * @param {Object} size
+ */
+export function queryQuestionBankList(page, size) {
+	return new Promise(resolve => {
+		helper.requestUrl(helper.websiteUrl + `v1/queryQuestionBankList`, {
+			page: page,
+			size: size,
+			companyId: uni.getStorageSync("company_id")
+		}, 'GET', res => {
+			resolve(res)
+		})
+	})
+}
+
+/**
+ * 查询题库列表不分页
+ * @param {Object} page
+ * @param {Object} size
+ */
+export function queryQuestionBankListNotLimit() {
+	return new Promise(resolve => {
+		helper.requestUrl(helper.websiteUrl + `v1/queryQuestionBankListNotLimit`, {
+			companyId: uni.getStorageSync("company_id")
+		}, 'GET', res => {
+			resolve(res)
+		})
+	})
+}
+
+/**
+ * 添加题库
+ * @param {Object} name
+ */
+export function addQuestionBank(name) {
+	return new Promise(resolve => {
+		helper.requestUrl(helper.websiteUrl + `v1/addQuestionBank`, {
+			name: name,
+			companyId: uni.getStorageSync("company_id")
+		}, 'POST', res => {
+			resolve(res)
+		})
+	})
+}
+
+/**
+ * 删除题库
+ * @param {Object} name
+ */
+export function deleteQuestionBank(id) {
+	return new Promise(resolve => {
+		helper.requestUrl(helper.websiteUrl + `v1/deleteQuestionBank`, {
+			id: id,
+			companyId: uni.getStorageSync("company_id")
+		}, 'GET', res => {
+			resolve(res)
+		})
+	})
+}
+
+/**
+ * 停用/启用题库
+ * @param {Object} name
+ */
+export function statusQuestionBank(id,status) {
+	return new Promise(resolve => {
+		helper.requestUrl(helper.websiteUrl + `v1/statusQuestionBank`, {
+			id: id,
+			status:status,
+			companyId: uni.getStorageSync("company_id")
+		}, 'GET', res => {
+			resolve(res)
+		})
+	})
+}
+/**
+ * 添加试题
+ * @param {Object} name
+ */
+export function addOneTopic(topic,topicByAnswer) {
+	return new Promise(resolve => {
+		let param ={
+			topic: JSON.stringify(topic),
+			topicByAnswer:JSON.stringify(topicByAnswer),
+			companyId: uni.getStorageSync("company_id")
+		}
+		helper.requestUrl(helper.websiteUrl + `v1/addOneTopic`, param, 'POST', res => {
+			resolve(res)
+		})
+	})
+}
+
+/**
+ * 编辑试题
+ * @param {Object} name
+ */
+export function editOneTopic(id,status) {
+	return new Promise(resolve => {
+		helper.requestUrl(helper.websiteUrl + `v1/editOneTopic`, {
+			id: id,
+			status:status,
+			companyId: uni.getStorageSync("company_id")
+		}, 'POST', res => {
+			resolve(res)
+		})
+	})
+}
+
+

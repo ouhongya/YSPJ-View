@@ -1,0 +1,308 @@
+<template>
+	<view class="main">
+		<a-head text="考试明细" bgColor='#4abdb4'></a-head>
+		<view>
+			<view class="top">
+				<view class="title">
+					考试题目考试题目考试题目
+				</view>
+				<view class="time">
+					2010-05-06—2019-01-02
+				</view>
+			</view>
+			<view class="center">
+				<view class="part">
+					总分：435
+				</view>
+				<view class="part">
+					合格分：34
+				</view>
+				<view class="part">
+					题目总数：343
+				</view>
+				<view class="part">
+					已完成：<text>3</text>人
+				</view>
+				<view class="part">
+					平均分：<text>45</text>
+				</view>
+				<view class="part">
+					合格率：<text>46%</text>
+				</view>
+			</view>
+			<view class="bottom">
+				<view class="subpart">
+					<!-- 账户 -->
+					<!-- 搜索 -->
+					<view class="subtop">
+						<view class="subsearch">
+							<u-search placeholder="请输入姓名" v-model="name" shape="square" :action-style="actionStyle"
+								border-color='#4abdb4' bg-color="#ffffff"></u-search>
+						</view>
+						<view class="subnew">
+							<view class="new" @click="toPaper()">
+								查看试卷
+							</view>
+							<view class="new">
+								导出成绩
+							</view>
+						</view>
+					</view>
+					<!-- 表单 -->
+					<view class="table-part">
+						<u-table border-color="#6ecac3">
+							<u-tr class="u-tr">
+								<u-th class="u-th" width="20%">考生姓名</u-th>
+								<u-th class="u-th" width="20%">得分</u-th>
+								<u-th class="u-th" width="20%">是否重考</u-th>
+								<u-th class="u-th" width="20%">是否合格</u-th>
+								<u-th class="u-th">操作</u-th>
+							</u-tr>
+						</u-table>
+					</view>
+				</view>
+				<view class="wrap">
+					<!-- 表单 -->
+					<view class="subpart">
+						<view class="table-part">
+							<u-table v-if="list.length>0">
+								<u-tr class="u-tr" v-for="(item, index) in list" :key="index">
+
+									<u-td class="u-td" width="20%">hhh</u-td>
+									<u-td class="u-td" width="20%" v-if="item.state==1">43</u-td>
+									<u-td class="u-td" width="20%" v-if="item.state==1">是</u-td>
+									<u-td class="u-td" width="20%" v-if="item.state==1">
+										<view class="action-part">
+											<view :class="item.type==1?'pass':'fail'">{{item.typename}}</view>
+										</view>
+									</u-td>
+									<u-td class="u-td">
+										<view class="action-part">
+											<view class="edit" v-if="item.state==1" @click="toMistake(index)">查看错题
+											</view>
+											<view class="no" v-if="item.state==0">未作答</view>
+										</view>
+									</u-td>
+								</u-tr>
+							</u-table>
+							<view class="empty" v-else>
+								<a-empty :changing="false"></a-empty>
+							</view>
+						</view>
+					</view>
+				</view>
+			</view>
+		</view>
+		<!-- 消息提示 -->
+		<u-toast ref="uToast" />
+		<!--页面加载动画-->
+		<rfLoading :active="loading"></rfLoading>
+	</view>
+
+</template>
+<script>
+	export default {
+		data() {
+			return {
+				loading: false,
+				name: '',
+				actionStyle: {
+					backgroundColor: '#4abdb4',
+					color: '#fff',
+					margin: '0',
+					width: '100rpx',
+					height: '68rpx',
+					lineHeight: '68rpx',
+					borderRadius: '0 10rpx 10rpx 0'
+				},
+				mistakelock: false,
+				paperlock: false,
+				list: [{
+						state: 1,
+						type: 1,
+						typename: '合格'
+					},
+					{
+						state: 1,
+						type: 2,
+						typename: '不合格'
+					},
+					{
+						state: 0,
+					}
+				]
+			}
+		},
+		created() {
+			this.loading = true;
+		},
+		mounted() {
+			setTimeout(() => {
+				this.loading = false;
+			}, 200)
+		},
+		methods: {
+			// 查看错题
+			toMistake() {
+				if (this.mistakelock) return;
+				this.mistakelock = true;
+				uni.navigateTo({
+					url: './mistake'
+				})
+				setTimeout(() => {
+					this.mistakelock = false;
+				}, 500)
+			},
+			//查看试卷
+			toPaper() {
+				if (this.paperlock) return;
+				this.paperlock = true;
+				uni.navigateTo({
+					url: './paper'
+				})
+				setTimeout(() => {
+					this.paperlock = false;
+				}, 500)
+			}
+		},
+	}
+</script>
+
+<style lang="less" scoped>
+	page {
+		background: #FFFFFF;
+	}
+
+	.main {
+		padding: 30rpx 20rpx;
+	}
+
+	.top {
+
+		border-bottom: 1px solid #EEEEEE;
+
+		.title {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			-webkit-box-orient: vertical;
+			word-break: break-all;
+			color: #333333;
+			text-align: center;
+			margin-bottom: 20rpx;
+			font-size: 32rpx;
+
+		}
+
+		.time {
+			color: #666666;
+			text-align: center;
+			line-height: 40rpx;
+			font-size: 28rpx;
+			margin-bottom: 20rpx;
+		}
+	}
+
+	.center {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex-wrap: wrap;
+		font-size: 30rpx;
+		color: #333333;
+		margin: 20rpx 0;
+		border-bottom: 1px solid #EEEEEE;
+
+		.part {
+			width: 33%;
+			margin-bottom: 20rpx;
+
+			text {
+				color: #06C1AE;
+			}
+		}
+	}
+
+	/deep/.u-content {
+		border-radius: 10rpx 0 0 10rpx !important;
+	}
+
+	/deep/.u-subsection {
+		padding: 0 10rpx !important;
+		border-radius: 0 !important;
+	}
+
+	.wrap {
+		position: relative;
+	}
+
+
+	.u-th {
+		background-color: #6ecac3;
+		color: #FFFFFF;
+		padding: 10rpx 0 !important;
+	}
+
+	.u-td {
+		padding: 20rpx 10rpx !important;
+	}
+
+	.subpart {
+		.subtop {
+			display: flex;
+			justify-content: space-between;
+			padding: 20rpx 0;
+			background: #FFFFFF;
+			margin-bottom: 20rpx;
+
+			.subsearch {
+				width: 100%;
+				flex: 1;
+			}
+
+			.subnew {
+
+				display: flex;
+				justify-content: flex-end;
+
+				.new {
+					background-color: #4abdb4;
+					color: #FFFFFF;
+					height: 68rpx;
+					line-height: 68rpx;
+					border-radius: 10rpx;
+					width: auto;
+					padding: 0 20rpx;
+					text-align: center;
+					font-size: 28rpx;
+					margin-left: 20rpx;
+				}
+			}
+		}
+	}
+
+	.table-part {
+
+		.action-part {
+			display: flex;
+			justify-content: space-around;
+
+			.fail {
+				color: #fa3534;
+			}
+
+			.pass {
+				color: #00b2a4;
+			}
+
+			.edit {
+				color: #2979ff;
+			}
+
+			.no {
+				color: #ff9900;
+			}
+		}
+	}
+</style>

@@ -1,0 +1,285 @@
+<template>
+	<view class="main">
+		<a-head text="我发布的考试" bgColor='#4abdb4'></a-head>
+		<u-sticky :offset-top="0">
+			<view class="task-state">
+				<!-- 搜索 -->
+				<view class="subtop">
+					<view class="subsearch">
+						<u-search placeholder="请输入考试名称" v-model="searchname" shape="square" :action-style="actionStyle"
+							border-color="#4abdb4" bg-color="#ffffff" @search="search()" @custom="search()"
+							@clear="clear()"></u-search>
+					</view>
+				</view>
+			</view>
+		</u-sticky>
+		<view class="center">
+			<view class="list-center">
+				<uni-swipe-action>
+					<uni-swipe-action-item class="swipe" v-for="(item,index) in selflist" :right-options="item.options"
+						:key="index" @change="open($event, index)" @click="click($event, index)">
+						<view class="list" @click="toDetail(index)">
+							<view class="title">
+								xxxxx考试
+							</view>
+							<view class="subtitle">
+								考试时间:<text>2021-06-03</text>至<text>2021-06-03</text>
+							</view>
+							<view class="sublast">
+								<view class="last border">
+									总人数：<text>3</text>人
+								</view>
+								<view class="last border">
+									已完成：<text>2</text>人
+								</view>
+								<view class="last border">
+									未完成：<text>1</text>人
+								</view>
+								<view class="last">
+									合格率：<text>80%</text>
+								</view>
+							</view>
+						</view>
+
+					</uni-swipe-action-item>
+				</uni-swipe-action>
+			</view>
+		</view>
+		<view class="empty">
+			<a-empty :changing="false"></a-empty>
+		</view>
+		<!-- 消息提示 -->
+		<u-toast ref="uToast" />
+		<!--页面加载动画-->
+		<rfLoading :active="loading"></rfLoading>
+	</view>
+
+</template>
+<script>
+	export default {
+		data() {
+			return {
+
+				loading: false,
+				jumplock: false,
+				searchname: '',
+				selflist: [{
+						show: false,
+						options: [{
+							text: '删除',
+							style: {
+								backgroundColor: '#fa3534'
+							}
+						}],
+					},
+					{
+						show: false,
+						options: [{
+							text: '停考',
+							style: {
+								backgroundColor: '#ff9900'
+							}
+						}],
+					},
+					{
+						show: false,
+						options: [{
+							text: '恢复',
+							style: {
+								backgroundColor: '#19be6b'
+							}
+						}],
+					},
+				],
+				actionStyle: {
+					backgroundColor: '#4abdb4',
+					color: '#fff',
+					margin: '0',
+					width: '100rpx',
+					height: '68rpx',
+					lineHeight: '68rpx',
+					borderRadius: '0 10rpx 10rpx 0'
+				},
+
+			}
+		},
+		created() {
+			this.loading = true;
+		},
+		mounted() {
+			setTimeout(() => {
+				this.loading = false;
+			}, 200)
+		},
+		methods: {
+
+			//发布考试详情
+			toDetail(index) {
+				if (this.jumplock) return;
+				this.jumplock = true;
+				uni.navigateTo({
+					url: './detail'
+				})
+				setTimeout(() => {
+					this.jumplock = false;
+				}, 500)
+			},
+			open(e, index) {
+				this.selflist[index].show = true;
+				this.selflist.map((val, idx) => {
+					if (index != idx) this.selflist[idx].show = false;
+				})
+			},
+			click(e, index) {
+
+				let {
+					content
+				} = e;
+
+				if (content.text === '删除') {
+					console.log('删除')
+				}
+				if (content.text === '停考') {
+					console.log('停考')
+				}
+				if (content.text === '恢复') {
+					console.log('恢复')
+				}
+
+			},
+			search() {
+
+			},
+			clear() {
+
+			}
+
+
+		},
+	}
+</script>
+
+<style lang="less" scoped>
+	page {
+		background: #FFFFFF;
+	}
+
+	/deep/.u-content {
+		border-radius: 10rpx 0 0 10rpx !important;
+	}
+
+	.main {
+		padding: 30rpx;
+	}
+
+	.task-state {
+		padding-bottom: 20rpx;
+		background: #ffffff;
+
+		.subtop {
+			display: flex;
+			justify-content: space-between;
+
+			.subsearch {
+				width: 80%;
+				flex: 1;
+			}
+
+			.subnew {
+				display: flex;
+				justify-content: flex-end;
+				margin-left: 20rpx;
+
+				.new {
+					background-color: #4abdb4;
+					color: #ffffff;
+					height: 70rpx;
+					line-height: 70rpx;
+					border-radius: 10rpx;
+					width: 120rpx;
+					text-align: center;
+					font-size: 28rpx;
+					margin-right: 20rpx;
+				}
+
+				.reset {
+					background-color: #909399;
+					color: #ffffff;
+					height: 70rpx;
+					line-height: 70rpx;
+					border-radius: 10rpx;
+					width: 120rpx;
+					text-align: center;
+					font-size: 28rpx;
+				}
+			}
+		}
+	}
+
+	.list-center {
+		margin-bottom: 40rpx;
+
+		.section {
+			margin-bottom: 30rpx;
+
+		}
+	}
+
+	.swipe {
+		margin: 20rpx 0;
+	}
+
+	.list {
+
+		width: 100%;
+		padding: 20rpx;
+		border: 1px solid #EEEEEE;
+		border-radius: 10rpx 0 0 10rpx;
+
+		.title {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			-webkit-box-orient: vertical;
+			word-break: break-all;
+			color: #333333;
+			border-bottom: 1px solid #EEEEEE;
+			line-height: 50rpx;
+			font-size: 30rpx;
+
+		}
+
+		.subtitle {
+			color: #333333;
+			padding-top: 20rpx;
+			font-size: 28rpx;
+
+			text {
+				padding: 0 10rpx;
+			}
+		}
+
+		.sublast {
+			margin-top: 20rpx;
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
+
+			.last {
+				width: 25%;
+				text-align: center;
+				color: #666666;
+				font-size: 24rpx;
+
+				text {
+					color: #19be6b;
+				}
+			}
+		}
+
+		.border {
+			border-right: 1px solid #EEEEEE;
+		}
+	}
+</style>

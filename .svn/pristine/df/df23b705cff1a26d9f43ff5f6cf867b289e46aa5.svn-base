@@ -1,0 +1,965 @@
+<template>
+	<view class="main">
+		<a-head text="考试中心" bgColor='#4abdb4'></a-head>
+		<view class="hello">
+			欢迎您，xxxx,346456
+		</view>
+		<view class="part-top">
+			<view class="part color1" @click="toSubject()">
+				<view class="txt">
+					新增试题
+				</view>
+			</view>
+			<view class="part color2" @click="toBase()">
+				<view class="txt">
+					题库管理
+				</view>
+			</view>
+			<view class="part color3" @click="toPublish()">
+				<view class="txt">
+					发布考试
+				</view>
+			</view>
+			<view class="part color4" @click="toPractice()">
+				<view class="txt">
+					考试练习
+				</view>
+			</view>
+		</view>
+		<view class="center">
+			<view class="list-center">
+				<u-section title="我发布的考试" sub-title="更多" @click="toMore()" class="section" font-size="30"></u-section>
+				<uni-swipe-action>
+					<uni-swipe-action-item class="swipe" v-for="(item,index) in selflist" :right-options="item.options"
+						:key="index" @change="open($event, index)" @click="click($event, index)">
+						<view class="list" @click="toDetail(index)">
+							<view class="title">
+								xxxxx考试
+							</view>
+							<view class="subtitle">
+								考试时间:<text>2021-06-03</text>至<text>2021-06-03</text>
+							</view>
+							<view class="sublast">
+								<view class="last border">
+									总人数：<text>3</text>人
+								</view>
+								<view class="last border">
+									已完成：<text>2</text>人
+								</view>
+								<view class="last border">
+									未完成：<text>1</text>人
+								</view>
+								<view class="last">
+									合格率：<text>80%</text>
+								</view>
+							</view>
+						</view>
+
+					</uni-swipe-action-item>
+				</uni-swipe-action>
+			</view>
+
+			<view class="list-center">
+				<u-section title="我的考试" :right="false" class="section" font-size="30"></u-section>
+				<view class="list-my" v-for="(item,index) in list" :key="index">
+					<view class="title">
+						xxxxx考试
+					</view>
+					<view class="left">
+						考试时间：<text>2021-06-03</text>至<text>2021-06-03</text>
+					</view>
+					<view class="subtitle">
+						<view class="sub-part">
+							<view class="sub">
+								时长：<text>60</text>分钟
+							</view>
+							<view class="sub">
+								总分：<text>54</text>分
+							</view>
+							<view class="sub">
+								合格：<text>30</text>分
+							</view>
+						</view>
+					</view>
+					<view class="sublast">
+						<view class="statepart" v-if="item.state==1||item.state==2">
+							<view class="state">
+								待作答
+							</view>
+						</view>
+						<view class="statepart" v-if="item.state==3">
+							<view class="grade">
+								得分：<text class="pass">20</text>分
+							</view>
+							<view class="state-green">
+								合格
+							</view>
+						</view>
+						<view class="statepart" v-if="item.state==4">
+							<view class="grade">
+								得分：<text class="fail">20</text>分
+							</view>
+							<view class="state-red">
+								不合格
+							</view>
+						</view>
+						<view class="statepart"  v-if="item.state==5">
+							<view class="state blue">
+								进行中
+							</view>
+						</view>
+						<view class="action-part">
+							<view class="nostart" v-if="item.state==1">
+								考试未开始
+							</view>
+							<view class="start" v-if="item.state==2" @click="start()">
+								开始答题
+							</view>
+							<view class="see" v-if="item.state==3" @click="toMistake()">
+								查看错题
+							</view>
+							<view class="again" v-if="item.state==4" @click="again()">
+								再次作答
+							</view>
+							<view class="continue" v-if="item.state==5" @click="keep()">
+								继续考试
+							</view>
+						</view>
+					</view>
+				</view>
+
+			</view>
+
+		</view>
+		<!-- 练习选择 -->
+		<u-popup v-model="practiceShow" mode="bottom" width="40%" height="80%" @close="closePractice">
+			<view class="Model">
+				<view class="toptitle">考试练习</view>
+				<view class="collapsePart">
+				<view class="content">
+					<u-form ref="uForm" :label-style="labelStyle" label-width="160">
+						<view class="range">
+							<u-cell-group>
+								<u-cell-item title="所属题库" :title-style="labelStyle" :arrow="true"
+									arrow-direction="right" :value="belong" @click="belongChange()"></u-cell-item>
+							</u-cell-group>
+						</view>
+						<u-form-item label="题目类型" class="form">
+							<u-checkbox-group @change="checktype"  icon-size="30">
+								<u-checkbox v-model="item.checked" v-for="(item, index) in typeList" :key="index"
+									:name="item.name" active-color="#4abdb4">
+									<text>{{ item.name }}</text>
+								</u-checkbox>
+							</u-checkbox-group>
+						</u-form-item>
+		
+						<u-form-item label="题目数量" class="form">
+							<u-input v-model="count" :border="true" placeholder="请输入题目数量" type="text" @input="countInput($event)"
+							@blur="countBlur($event)"/>
+						</u-form-item>
+					</u-form>
+				</view>
+				</view>
+				<view class="roleAction">
+					<view class="cancel" @click="closePractice()">取消</view>
+					<view class="sure" @click="startPractice()">开始练习</view>
+				</view>
+			</view>
+		</u-popup>
+		
+		<!-- 所属题库选择 -->
+		<u-popup v-model="belongShow" mode="bottom" width="40%" height="80%" @close="belongclose">
+			<view class="Model">
+				<view class="toptitle">所属题库</view>
+				<view class="collapsePart">
+					<view class="u-collapse-item">
+						<view :hover-stay-time="200" class="u-collapse-head">
+							<block>
+								<u-checkbox-group @change="checkAll">
+									<u-checkbox v-model="checkedAll" active-color="#4abdb4" icon-size="30">全部题库
+									</u-checkbox>
+								</u-checkbox-group>
+							</block>
+						</view>
+						<view class="u-collapse-body">
+							<view class="u-collapse-content">
+								<scroll-view scroll-y class="scroll-part">
+									<u-checkbox-group @change="check1" :wrap="true" icon-size="30">
+										<u-checkbox v-model="item.checked" v-for="(item, index) in belongList"
+											:key="index" :name="item.name" active-color="#4abdb4">
+											<text>{{ item.name }}</text>
+										</u-checkbox>
+									</u-checkbox-group>
+								</scroll-view>
+							</view>
+						</view>
+					</view>
+				</view>
+				<view class="roleAction">
+					<view class="cancel" @click="belongclose()">取消</view>
+					<view class="sure" @click="belongsure()">确定</view>
+				</view>
+			</view>
+		</u-popup>
+		<view class="empty">
+			<a-empty :changing="false"></a-empty>
+		</view>
+		<!-- 消息提示 -->
+		<u-toast ref="uToast" />
+		<!--页面加载动画-->
+		<rfLoading :active="loading"></rfLoading>
+	</view>
+
+</template>
+<script>
+	export default {
+		data() {
+			return {
+
+				loading: false,
+				baselock: false,
+				publishlock: false,
+				newlock: false,
+				practicelock: false,
+				morelock: false,
+				jumplock: false,
+				againlock:false,
+				mistakelock:false,
+				keeplock:false,
+				list: [{
+						state: 1
+					},
+					{
+						state: 2
+					},
+					{
+						state: 3
+					},
+					{
+						state: 4
+					},
+					{
+						state: 5
+					}
+				],
+				selflist: [{
+						show: false,
+						options: [{
+							text: '删除',
+							style: {
+								backgroundColor: '#fa3534'
+							}
+						}],
+					},
+					{
+						show: false,
+						options: [{
+							text: '停考',
+							style: {
+								backgroundColor: '#ff9900'
+							}
+						}],
+					},
+					{
+						show: false,
+						options: [{
+							text: '恢复',
+							style: {
+								backgroundColor: '#19be6b'
+							}
+						}],
+					},
+				],
+				practiceShow:false,
+				belongShow:false,
+				titleStyle: {
+					color: '#333333',
+					fontSize: '30rpx',
+				},
+				labelStyle:{
+					color: '#333333',
+					fontSize: '30rpx',
+				},
+				checkedAll: false,
+				belongList: [{
+						id: 1,
+						checked: false,
+						name: '默认分类'
+					},
+					{
+						id: 2,
+						checked: false,
+						name: 'xxx分类'
+					},
+					{
+						id: 3,
+						checked: false,
+						name: 'xxx分类1'
+					}
+				],
+				belong:'',
+				belongPart:'',
+				count:'',
+				type:'',
+				typeList: [{
+						name: '单选',
+						checked: false,
+						disabled: false
+					},
+					{
+						name: '多选',
+						checked: false,
+						disabled: false
+					},
+					{
+						name: '判断',
+						checked: false,
+						disabled: false
+					}
+				],
+
+			}
+		},
+		created() {
+			this.loading = true;
+		},
+		mounted() {
+			setTimeout(() => {
+				this.loading = false;
+			}, 200)
+		},
+		methods: {
+			//跳转新增试题
+			toSubject() {
+				if (this.newlock) return;
+				this.newlock = true;
+				uni.navigateTo({
+					url: './subject'
+				})
+				setTimeout(() => {
+					this.newlock = false;
+				}, 500)
+			},
+			//跳转题库管理
+			toBase() {
+				if (this.baselock) return;
+				this.baselock = true;
+				uni.navigateTo({
+					url: './testbase'
+				})
+				setTimeout(() => {
+					this.baselock = false;
+				}, 500)
+			},
+			//跳转发布考试
+			toPublish() {
+				if (this.publishlock) return;
+				this.publishlock = true;
+				uni.navigateTo({
+					url: './publish'
+				})
+				setTimeout(() => {
+					this.publishlock = false;
+				}, 500)
+			},
+			
+			//跳转更多
+			toMore() {
+				if (this.morelock) return;
+				this.morelock = true;
+				uni.navigateTo({
+					url: './more'
+				})
+				setTimeout(() => {
+					this.morelock = false;
+				}, 500)
+			},
+			//发布考试详情
+			toDetail(index) {
+				if (this.jumplock) return;
+				this.jumplock = true;
+				uni.navigateTo({
+					url: './detail'
+				})
+				setTimeout(() => {
+					this.jumplock = false;
+				}, 500)
+			},
+			// 开始作答
+			start(){
+				if (this.startlock) return;
+				this.startlock = true;
+				uni.navigateTo({
+					url: './exam'
+				})
+				setTimeout(() => {
+					this.startlock = false;
+				}, 500)
+			},
+			// 再次作答
+			again(){
+				if (this.againlock) return;
+				this.againlock = true;
+				uni.navigateTo({
+					url: './exam'
+				})
+				setTimeout(() => {
+					this.againlock = false;
+				}, 500)
+			},
+			// 继续考试
+			keep(){
+				if (this.keeplock) return;
+				this.keeplock = true;
+				uni.navigateTo({
+					url: './exam'
+				})
+				setTimeout(() => {
+					this.keeplock = false;
+				}, 500)
+			},
+			// 查看错题
+			toMistake(){
+				if (this.mistakelock) return;
+				this.mistakelock = true;
+				uni.navigateTo({
+					url: './mistake'
+				})
+				setTimeout(() => {
+					this.mistakelock = false;
+				}, 500)
+			},
+			open(e, index) {
+				this.selflist[index].show = true;
+				this.selflist.map((val, idx) => {
+					if (index != idx) this.selflist[idx].show = false;
+				})
+			},
+			click(e, index) {
+
+				let {
+					content
+				} = e;
+
+				if (content.text === '删除') {
+					console.log('删除')
+				}
+				if (content.text === '停考') {
+					console.log('停考')
+				}
+				if (content.text === '恢复') {
+					console.log('恢复')
+				}
+
+			},
+			
+			//考试练习
+				toPractice(){
+					this.practiceShow=true;
+				},
+				checktype(e){
+					this.type=e.toString()
+				},
+				countInput(event) {
+					setTimeout(() => {
+						let value = event;
+						let patrn;
+						let endvalue = '';
+						if (value.length == 1) {
+							patrn = /[^\d]/g;
+							endvalue = value.replace(patrn, '')
+						} else {
+							endvalue = this.ChangeNumValue(value)
+						}
+						this.count = endvalue;
+					}, 50)
+				},
+				countBlur(event) {
+					let value = event;
+					if (value == '') {
+						this.count = 0;
+					}
+				},
+				// 整数
+				ChangeNumValue(tmpVal) {
+					if (tmpVal) {
+						let s = tmpVal.substring(0, 1);
+						let t = tmpVal.substring(1, tmpVal.length);
+						if (s == 0) {
+							return t;
+						}
+						var tmpVal = tmpVal.replace(/[^\d]/g, '');
+						return tmpVal;
+					} else {
+						return "";
+					}
+				},
+				
+				closePractice(){
+					this.practiceShow=false;
+				},
+				startPractice(){
+					this.practiceShow=false;
+					if (this.practicelock) return;
+					this.practicelock = true;
+					uni.navigateTo({
+						url: './practice'
+					})
+					setTimeout(() => {
+						this.practicelock = false;
+					}, 500)
+				},
+				
+				// 选择题库
+				belongChange() {
+					this.belongShow = true;
+				},
+				checkAll(e) {
+					if (this.checkedAll) {
+						this.belongList.map(item => {
+							item.checked = true;
+						})
+						this.belongPart = '全部题库';
+					} else {
+						this.belongList.map(item => {
+							item.checked = false;
+				
+						})
+						this.belongPart = '';
+					}
+				},
+				check1(e) {
+					if (e.length == this.belongList.length) {
+						this.checkedAll = true
+						this.belongPart = '全部题库';
+					} else {
+						this.checkedAll = false
+						this.belongPart = e.toString();
+					}
+				},
+				belongclose() {
+					this.belongShow = false;
+				},
+				belongsure() {
+					this.belong = this.belongPart;
+					this.belongShow = false;
+				},
+			
+
+		},
+	}
+</script>
+
+<style lang="less" scoped>
+	page {
+		background: #FFFFFF;
+	}
+
+	.main {
+		padding: 30rpx;
+	}
+	
+	.Model {
+		.content{
+			padding:20rpx 30rpx;
+			/deep/.u-cell{
+				padding: 10px 0;
+			}
+		}
+		.roleAction {
+			position: fixed;
+			bottom: 0;
+			height: 100rpx;
+			line-height: 100rpx;
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
+			font-size: 32rpx;
+			width: 100%;
+			border-top: 2rpx solid #f6f6f6;
+			background: #ffffff;
+			z-index: 999;
+	
+			.cancel {
+				width: 40%;
+				border: 2rpx solid #dedede;
+				color: #606266;
+				text-align: center;
+				height: 80rpx;
+				line-height: 80rpx;
+				border-radius: 80rpx;
+			}
+	
+			.sure {
+				width: 40%;
+				color: #ffffff;
+				background: #4abdb4;
+				text-align: center;
+				height: 80rpx;
+				line-height: 80rpx;
+				border: 2rpx solid #4abdb4;
+				border-radius: 80rpx;
+			}
+		}
+	
+		.toptitle {
+			height: 90rpx;
+			line-height: 90rpx;
+			background: #4abdb4;
+			color: #ffffff;
+			font-size: 34rpx;
+			text-align: center;
+			position: fixed;
+			top: 0rpx;
+			width: 100%;
+			z-index: 999;
+		}
+	
+		.collapsePart {
+			padding: 100rpx 0;
+			background: #ffffff;
+			width: 100%;
+			position: relative;
+	
+			.u-collapse-head {
+				display: flex;
+				justify-content: flex-start;
+				align-items: center;
+				color: #333333;
+				font-size: 28rpx;
+				line-height: 1;
+				padding: 10rpx 20rpx 10rpx 6rpx;
+				text-align: left;
+				padding-left: 60rpx;
+			}
+	
+			.u-collapse-title {
+				flex: 1;
+				width: 100%;
+				line-height: 60rpx;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				display: -webkit-box;
+				-webkit-line-clamp: 2;
+				-webkit-box-orient: vertical;
+			}
+	
+			.u-arrow-down-icon {
+				transition: all 0.3s;
+				margin-right: 20rpx;
+				margin-left: 14rpx;
+			}
+	
+			.u-arrow-down-icon-active {
+				transform: rotate(180deg);
+				transform-origin: center center;
+			}
+	
+			.u-collapse-body {
+				overflow: scroll;
+				transition: all 0.3s;
+			}
+	
+			.u-collapse-content {
+				font-size: 26rpx;
+				color: #666;
+				text-align: left;
+				padding-left: 120rpx;
+	
+	
+				.scroll-part {
+					height: 50vh;
+				}
+				.gray {
+					color: #999999;
+				}	
+			}
+		}
+	}
+
+	.hello {
+		font-size: 32rpx;
+		color: #333333;
+		font-weight: bold;
+		letter-spacing: 3px;
+		text-shadow: 2px 2px 2px rgba(0, 0, 0, .5);
+	}
+
+	.part-top {
+		padding: 30rpx 30rpx 10rpx 30rpx;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		// margin-bottom: 10px;
+		flex-wrap: wrap;
+
+		.part {
+			width: 45%;
+			text-align: center;
+			border-radius: 10rpx;
+			height: 80rpx;
+			line-height: 80rpx;
+			background: #f6fff9;
+			box-shadow: 2px 2px 2px rgba(0, 0, 0, .5);
+			margin-bottom: 40rpx;
+
+			.txt {
+				font-size: 30rpx;
+				color: #FFFFFF;
+				letter-spacing: 3px;
+			}
+		}
+
+		.color1 {
+			background: linear-gradient(to right, #ba6cfd, #ab33f1)
+		}
+
+		.color2 {
+			background: linear-gradient(to right, #ed6e66, #e63f34)
+		}
+
+		.color3 {
+			background: linear-gradient(to right, #50e299, #19be6b);
+		}
+
+		.color4 {
+			background: linear-gradient(to right, #64b6fc, #2395f7);
+		}
+	}
+
+	.list-center {
+		margin-bottom: 40rpx;
+
+		.section {
+			margin-bottom: 30rpx;
+
+		}
+	}
+
+	.swipe {
+		margin: 20rpx 0;
+	}
+
+	.list {
+
+		width: 100%;
+		padding: 20rpx;
+		border: 1px solid #EEEEEE;
+		border-radius: 10rpx 0 0 10rpx;
+
+		.title {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			-webkit-box-orient: vertical;
+			word-break: break-all;
+			color: #333333;
+			border-bottom: 1px solid #EEEEEE;
+			line-height: 50rpx;
+			font-size: 30rpx;
+
+		}
+
+		.subtitle {
+			color: #333333;
+			padding-top: 20rpx;
+			font-size: 28rpx;
+
+			text {
+				// color: #2979ff;
+				padding: 0 10rpx;
+			}
+		}
+
+		.sublast {
+			margin-top: 20rpx;
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
+
+			.last {
+				width: 25%;
+				text-align: center;
+				color: #666666;
+				font-size: 24rpx;
+
+				text {
+					color: #19be6b;
+					// font-weight: bold;
+				}
+			}
+		}
+
+		.border {
+			border-right: 1px solid #EEEEEE;
+		}
+	}
+
+	.list-my {
+		margin: 20rpx 0;
+		padding: 20rpx;
+		border: 1px solid #EEEEEE;
+
+		border-radius: 10rpx;
+
+		.title {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			-webkit-box-orient: vertical;
+			word-break: break-all;
+			color: #333333;
+			line-height: 50rpx;
+			font-size: 30rpx;
+		}
+
+		.left {
+			color: #333333;
+			margin: 10rpx 0;
+			font-size: 28rpx;
+
+			text {
+				color: #333333;
+				margin: 0 10rpx;
+				// font-weight: bold;
+			}
+		}
+
+		.subtitle {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			font-size: 28rpx;
+
+			.sub-part {
+				// width: 48%;
+				width: 100%;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+
+				.sub {
+					color: #333333;
+					margin: 10rpx 0;
+					width: 33%;
+
+					text {
+						color: #999999;
+						margin-right: 10rpx;
+						font-weight: bold;
+					}
+				}
+			}
+		}
+
+		.sublast {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			border-top: 1px solid #EEEEEE;
+			padding: 10rpx 0;
+			margin-top: 20rpx;
+
+			.statepart {
+				width: 80%;
+				display: flex;
+				justify-content: space-between;
+				padding-right: 60rpx;
+
+				.state {
+					color: #999999;
+					font-size: 28rpx;
+					width: 100rpx;
+				}
+				.blue{
+					color: #19be6b;
+				}
+
+				.state-green {
+					color: #19be6b;
+					font-size: 28rpx;
+					width: 100rpx;
+				}
+
+				.state-red {
+					color: #fa3534;
+					font-size: 28rpx;
+					width: 100rpx;
+				}
+
+				.grade {
+					color: #666666;
+					font-size: 28rpx;
+
+					text {
+						margin: 0 10rpx;
+						font-weight: bold;
+					}
+
+					.pass {
+						color: #19be6b;
+					}
+
+					.fail {
+						color: #fa3534;
+					}
+				}
+
+			}
+
+			.action-part {
+				width: 40%;
+				color: #FFFFFF;
+				font-size: 28rpx;
+				text-align: center;
+				display: flex;
+				justify-content: flex-end;
+
+				.start {
+					width: 80%;
+					height: 60rpx;
+					line-height: 60rpx;
+					background: #19be6b;
+					border-radius: 10rpx;
+
+				}
+
+				.nostart {
+					width: 80%;
+					height: 60rpx;
+					line-height: 60rpx;
+					background: #c8c9cc;
+					border-radius: 10rpx;
+
+				}
+
+				.see {
+					width: 80%;
+					height: 60rpx;
+					line-height: 60rpx;
+					background: #fa3534;
+					border-radius: 10rpx;
+
+				}
+
+				.again {
+					width: 80%;
+					height: 60rpx;
+					line-height: 60rpx;
+					background: #ff9900;
+					border-radius: 10rpx;
+
+				}
+				.continue{
+					width: 80%;
+					height: 60rpx;
+					line-height: 60rpx;
+					background: #2979ff;
+					border-radius: 10rpx;
+				}
+			}
+		}
+	}
+</style>

@@ -1,0 +1,946 @@
+<template>	
+	<view class="main">
+		<a-head text="发布考试" bgColor="#4abdb4"></a-head>
+		<view>
+			<view class="contain">
+				<view class="content">
+					<u-cell-group>
+						<u-cell-item title="考试名称" :title-style="titleStyle" arrow-direction="right" :value="examname" @click="examnameChange()"></u-cell-item>
+						<u-cell-item title="考试题库" :title-style="titleStyle" arrow-direction="right" :value="belong" @click="belongChange()"></u-cell-item>
+						<u-cell-item title="考生范围" :title-style="titleStyle" arrow-direction="right" :value="range" @click="rangeChange()"></u-cell-item>
+						<u-cell-item title="考试时间" :title-style="titleStyle" arrow-direction="right" :value="time" @click="timeChange()"></u-cell-item>
+						<u-cell-item title="考试时长" :title-style="titleStyle" arrow-direction="right" :value="duration" @click="durationChange()"></u-cell-item>
+						<u-cell-item title="重考次数" :title-style="titleStyle" arrow-direction="right" :value="frequency" @click="frequencyChange()"></u-cell-item>
+					</u-cell-group>
+				</view>
+
+				<view class="content">
+					<view class="list">
+						<view class="left">考试题型</view>
+						<view class="right">
+							<u-checkbox-group @change="checkboxGroupChange" active-color="#4abdb4">
+								<u-checkbox v-model="j.checked" v-for="(j, index1) in checkboxList" :key="index1" :name="j.name">{{ j.name }}</u-checkbox>
+							</u-checkbox-group>
+						</view>
+					</view>
+					<view class="list" v-for="(item, index) in gradelist" :key="index">
+						<view class="left">{{ item.typename }}</view>
+						<view class="right">
+							<view class="grade">
+								<u-input
+									v-model="item.grade"
+									type="text"
+									:border="true"
+									placeholder=""
+									height="50"
+									class="input"
+									@input="gradeChange($event, index)"
+									@blur="gradeBlur($event, index)"
+								/>
+								<text>分/题</text>
+							</view>
+							<view class="grade">
+								<text>共</text>
+								<u-input
+									v-model="item.count"
+									type="text"
+									placeholder=""
+									:border="true"
+									height="50"
+									class="input"
+									@input="countChange($event, index)"
+									@blur="countBlur($event, index)"
+								/>
+								<text>题</text>
+							</view>
+						</view>
+					</view>
+					<view class="list" v-if="gradelist.length > 0">
+						<view class="left">考试总分</view>
+						<view class="right">
+							<view class="grade">
+								{{ total }}
+								<text>分</text>
+							</view>
+						</view>
+					</view>
+					<view class="list" v-if="gradelist.length > 0">
+						<view class="left">合格分值</view>
+						<view class="right">
+							<view class="grade">
+								<u-input v-model="pass" type="text" :border="true" placeholder="" height="50" class="input" @input="passChange($event)" @blur="passBlur($event)" />
+								<text>分</text>
+							</view>
+						</view>
+					</view>
+				</view>
+				<view class="content">
+					<u-cell-group>
+						<u-cell-item title="考试说明(选填)" :title-style="titleStyle" arrow-direction="right" :value="explain" @click="explainChange()"></u-cell-item>
+					</u-cell-group>
+				</view>
+			</view>
+			<view class="action">
+				<view class="bottom">
+					<view class="cancel" @click="cancel()">取消</view>
+					<view class="save" @click="save()">发布</view>
+				</view>
+			</view>
+		</view>
+
+		<!-- 考试名称 -->
+		<u-modal v-model="examnameShow" title="考试名称" cancel-text="取消" confirm-text="确定" confirm-color="#1fac9c" :show-cancel-button="true" @confirm="examnameConfirm">
+			<view class="slot-content">
+				<view class="model"><u-input v-model="examnamePart" placeholder="请输入你的考试名称" type="textarea" :autoHeight="true" /></view>
+			</view>
+		</u-modal>
+
+		<!-- 考试题库 -->
+		<u-popup v-model="belongShow" mode="bottom" width="40%" height="80%" @close="belongclose">
+			<view class="Model">
+				<view class="toptitle">考试题库</view>
+				<view class="collapsePart">
+					<view class="u-collapse-item">
+						<view :hover-stay-time="200" class="u-collapse-head">
+							<block>
+								<u-checkbox-group @change="checkAll"><u-checkbox v-model="checkedAll" active-color="#4abdb4" icon-size="30">全部题库</u-checkbox></u-checkbox-group>
+							</block>
+						</view>
+						<view class="u-collapse-body">
+							<view class="u-collapse-content">
+								<scroll-view scroll-y class="scroll-part">
+									<u-checkbox-group @change="check1" :wrap="true" icon-size="30">
+										<u-checkbox v-model="item.checked" v-for="(item, index) in belongList" :key="index" :name="item.name" active-color="#4abdb4">
+											<view class="range-part">
+												<text>{{ item.name }}</text>
+											</view>
+										</u-checkbox>
+									</u-checkbox-group>
+								</scroll-view>
+							</view>
+						</view>
+					</view>
+				</view>
+				<view class="roleAction">
+					<view class="cancel" @click="belongclose()">取消</view>
+					<view class="sure" @click="belongsure()">确定</view>
+				</view>
+			</view>
+		</u-popup>
+
+		<!-- 考生范围 -->
+		<u-popup v-model="rangeShow" mode="bottom" width="40%" height="80%" @close="rangeclose">
+			<view class="Model">
+				<view class="toptitle">考生范围</view>
+				<view class="collapsePart">
+					<view class="u-collapse-item">
+						<view :hover-stay-time="200" class="u-collapse-head">
+							<block>
+								<u-checkbox-group @change="checkAllrange">
+									<u-checkbox v-model="checkedAllrange" active-color="#4abdb4" icon-size="30">全部考生</u-checkbox>
+								</u-checkbox-group>
+							</block>
+						</view>
+						<view class="u-collapse-body">
+							<view class="u-collapse-content">
+								<scroll-view scroll-y class="scroll-part">
+									<u-checkbox-group @change="check1range" :wrap="true" icon-size="30">
+										<u-checkbox v-model="item.checked" v-for="(item, index) in rangeList" :key="index" :name="item.name" active-color="#4abdb4">
+											<view class="range-part">
+												<view class="range">{{ item.name }}</view>
+												<view class="range gray">{{ item.duty }}</view>
+												<view class="range gray">{{ item.number }}</view>
+											</view>
+										</u-checkbox>
+									</u-checkbox-group>
+								</scroll-view>
+							</view>
+						</view>
+					</view>
+				</view>
+				<view class="roleAction">
+					<view class="cancel" @click="rangeclose()">取消</view>
+					<view class="sure" @click="rangesure()">确定</view>
+				</view>
+			</view>
+		</u-popup>
+
+		<!-- 考试时长 -->
+		<u-modal v-model="durationShow" title="考试时长" cancel-text="取消" confirm-text="确定" confirm-color="#1fac9c" :show-cancel-button="true" @confirm="durationConfirm">
+			<view class="slot-content">
+				<view class="model">
+					<view class="number">
+						<input type="text" v-model="durationPart" @input="numberInput($event)" @blur="durationBlur($event)" />
+						<text>分钟</text>
+					</view>
+				</view>
+			</view>
+		</u-modal>
+
+		<!-- 重考次数 -->
+		<u-modal v-model="frequencyShow" title="重考次数" cancel-text="取消" confirm-text="确定" confirm-color="#1fac9c" :show-cancel-button="true" @confirm="frequencyConfirm">
+			<view class="slot-content">
+				<view class="model">
+					<view class="number">
+						<input type="text" v-model="frequencyPart" @input="frequencyInput($event)" @blur="frequencyBlur($event)" />
+						<text>次</text>
+					</view>
+				</view>
+			</view>
+		</u-modal>
+
+		<!-- 考试时间 -->
+		<u-calendar v-model="timeShow" mode="range" @change="timeConfirm" max-date="2030-01-01" :min-date="istoday" ref="calendar">
+			<view slot="tooltip"><view class="emptytips" @click="emptytime()">清空日期</view></view>
+		</u-calendar>
+
+		<!-- 考试说明 -->
+		<u-modal v-model="explainShow" title="考试说明" cancel-text="取消" confirm-text="确定" confirm-color="#1fac9c" :show-cancel-button="true" @confirm="explainConfirm">
+			<view class="slot-content">
+				<view class="model"><u-input v-model="explainPart" placeholder="请输入考试说明" type="textarea" :autoHeight="true" /></view>
+			</view>
+		</u-modal>
+		<!-- 消息提示 -->
+		<u-toast ref="uToast" />
+		<!--页面加载动画-->
+		<rfLoading :active="loading"></rfLoading>
+	</view>
+</template>
+<script>
+import { examineRange, releaseExam, queryQuestionBankListNotLimit } from '@/api/exam/testbase.js';
+export default {
+	data() {
+		return {
+			loading: false,
+			gradelist: [],
+			examname: '',
+			belong: '',
+			range: '',
+			time: '',
+			duration: '',
+			frequency: '',
+			explain: '',
+			examnameShow: false,
+			belongShow: false,
+			rangeShow: false,
+			timeShow: false,
+			durationShow: false,
+			frequencyShow: false,
+			explainShow: false,
+			examnamePart: '',
+			belongPart: '',
+			rangePart: '',
+			explainPart: '',
+			durationPart: '',
+			frequencyPart: '',
+			istoday: '1950-01-01',
+			total: 0,
+			pass: 0,
+			titleStyle: {
+				color: '#333333',
+				fontSize: '30rpx'
+			},
+			checkedAll: false,
+			belongList: [
+				{
+					id: 1,
+					checked: false,
+					name: '默认分类'
+				},
+				{
+					id: 2,
+					checked: false,
+					name: 'xxx分类'
+				},
+				{
+					id: 3,
+					checked: false,
+					name: 'xxx分类1'
+				}
+			],
+			checkedAllrange: false,
+			rangeList: [
+				{
+					id: 1,
+					checked: false,
+					name: '张三',
+					duty: '专责',
+					number: '001'
+				},
+				{
+					id: 2,
+					checked: false,
+					name: '李四',
+					duty: '组长',
+					number: '002'
+				},
+				{
+					id: 3,
+					checked: false,
+					name: '王五',
+					duty: '检查员',
+					number: '003'
+				}
+			],
+			checkboxList: [
+				{
+					name: '单选',
+					checked: false,
+					disabled: false
+				},
+				{
+					name: '多选',
+					checked: false,
+					disabled: false
+				},
+				{
+					name: '判断',
+					checked: false,
+					disabled: false
+				}
+			]
+		};
+	},
+	created() {
+		this.loading = true;
+		//获取当前日期
+		let datetoday = new Date();
+		this.istoday = datetoday.getFullYear() + '-' + (datetoday.getMonth() + 1) + '-' + datetoday.getDate();
+		examineRange().then(res => {
+			res.forEach(item => {
+				item.checked = false;
+			});
+			this.rangeList = res;
+		});
+		queryQuestionBankListNotLimit().then(res => {
+			res.forEach(item => {
+				item.checked = false;
+			});
+			this.belongList = res;
+		});
+	},
+	mounted() {
+		setTimeout(() => {
+			this.loading = false;
+		}, 200);
+	},
+	methods: {
+		cancel() {
+			uni.navigateTo({
+				url: './administer'
+			});
+		},
+		save() {
+			let name = this.examnamePart;
+			let examIds = [];
+			this.belongList.forEach(entry => {
+				if (entry.checked) {
+					examIds.push(entry.id);
+				}
+			});
+			let userIds = [];
+			this.rangeList.forEach(entry => {
+				if (entry.checked) {
+					userIds.push(entry.id);
+				}
+			});
+			let startTime = this.time.toString().split('至')[0];
+			let endTime = this.time.toString().split('至')[1];
+			let longTime = this.duration.substring(0,this.duration.length-2)
+			let examCount = this.frequency.substring(0,this.frequency.length-1)
+			let  remarks = this.explain
+			let examType = []
+			this.gradelist.forEach(item=>{
+				if(item.typename=="单选"){
+					examType.push({
+						type:0,
+						score:item.grade,
+						count:item.count
+					})
+				}else if(item.typename=="多选"){
+					examType.push({
+						type:1,
+						score:item.grade,
+						count:item.count
+					})
+				}else{
+					examType.push({
+						type:2,
+						score:item.grade,
+						count:item.count
+					})
+				}
+			})
+			let totalScore = this.total
+			let qualifiedScore = this.pass
+			let params = {
+				name:name,
+				examIds:examIds,
+				examIds:examIds,
+				userIds:userIds,
+				startTime:startTime,
+				endTime:endTime,
+				longTime:parseInt(longTime),
+				exam_count:parseInt(examCount),
+				examCount:parseInt(examCount),
+				remarks:remarks,
+				examType:examType,
+				totalScore:totalScore,
+				qualifiedScore:qualifiedScore,
+				totalUser:parseInt(userIds.length),
+				status:0,
+				isFlag:0,
+				userId:uni.getStorageSync("USER_ID"),
+				companyId:uni.getStorageSync("company_id"),
+			}
+			releaseExam(params).then(res=>{
+				if(res=="SUCCESS"){
+					uni.navigateTo({
+						url: './administer?isFlag='+true
+					});
+				}else{
+					this.$refs.uToast.show({
+						title: res,
+						type: 'warning'
+					});
+				}
+			})
+		},
+		//考试名称
+		examnameChange() {
+			this.examnamePart = this.examname;
+			this.examnameShow = true;
+		},
+		examnameConfirm() {
+			this.examname = this.examnamePart;
+			this.examnameShow = false;
+		},
+		//考试题库
+		belongChange() {
+			this.belongShow = true;
+		},
+		checkAll(e) {
+			if (this.checkedAll) {
+				this.belongList.map(item => {
+					item.checked = true;
+				});
+				this.belongPart = '全部题库';
+			} else {
+				this.belongList.map(item => {
+					item.checked = false;
+				});
+				this.belongPart = '';
+			}
+		},
+		check1(e) {
+			if (e.length == this.belongList.length) {
+				this.checkedAll = true;
+				this.belongPart = '全部题库';
+			} else {
+				this.checkedAll = false;
+				this.belongPart = e.toString();
+			}
+		},
+		belongclose() {
+			this.belongShow = false;
+		},
+		belongsure() {
+			this.belong = this.belongPart;
+			this.belongShow = false;
+		},
+		//考生范围
+		rangeChange() {
+			this.rangeShow = true;
+		},
+		checkAllrange(e) {
+			if (this.checkedAllrange) {
+				this.rangeList.map(item => {
+					item.checked = true;
+				});
+				this.rangePart = '全部考生';
+			} else {
+				this.rangeList.map(item => {
+					item.checked = false;
+				});
+				this.rangePart = '';
+			}
+		},
+		check1range(e) {
+			if (e.length == this.rangeList.length) {
+				this.checkedAllrange = true;
+				this.rangePart = '全部考生';
+			} else {
+				this.checkedAllrange = false;
+				this.rangePart = e.toString();
+			}
+		},
+		rangeclose() {
+			this.rangeShow = false;
+		},
+		rangesure() {
+			this.range = this.rangePart;
+			this.rangeShow = false;
+		},
+		//考试时间
+		timeChange() {
+			this.timeShow = true;
+		},
+		timeConfirm(e) {
+			if (e.startDate == '0-00-00' || e.endDate == '0-00-00') {
+				this.$refs.uToast.show({
+					title: '请选择开始日期与结束日期',
+					type: 'warning'
+				});
+				this.timeShow = true;
+			} else {
+				this.time = e.startDate + '至' + e.endDate;
+				this.timeShow = false;
+			}
+		},
+		emptytime() {
+			this.time = '';
+			this.$refs.calendar.init();
+			this.timeShow = false;
+		},
+		//考试时长
+		durationChange() {
+			this.durationPart = this.duration.replace('分钟', '');
+			this.durationShow = true;
+		},
+		numberInput(event) {
+			setTimeout(() => {
+				let value = event.detail.value;
+				let patrn;
+				let endvalue = '';
+				if (value.length == 1) {
+					patrn = /[^\d]/g;
+					endvalue = value.replace(patrn, '');
+				} else {
+					endvalue = this.ChangeNumValue(value);
+				}
+				this.durationPart = endvalue;
+			}, 50);
+		},
+
+		durationBlur(event) {
+			let value = event.detail.value;
+			if (value == '') {
+				this.durationPart = 0;
+			}
+		},
+		durationConfirm() {
+			this.duration = this.durationPart + '分钟';
+			this.durationShow = false;
+		},
+		//重考次数
+		frequencyChange() {
+			this.frequencyPart = this.frequency.replace('次', '');
+			this.frequencyShow = true;
+		},
+		frequencyInput(event) {
+			setTimeout(() => {
+				let value = event.detail.value;
+				let patrn;
+				let endvalue = '';
+				if (value.length == 1) {
+					patrn = /[^\d]/g;
+					endvalue = value.replace(patrn, '');
+				} else {
+					endvalue = this.ChangeNumValue(value);
+				}
+				this.frequencyPart = endvalue;
+			}, 50);
+		},
+		frequencyBlur() {
+			let value = event.detail.value;
+			if (value == '') {
+				this.frequencyPart = 0;
+			}
+		},
+		frequencyConfirm() {
+			this.frequency = this.frequencyPart + '次';
+			this.frequencyShow = false;
+		},
+
+		// 考试题型
+		checkboxGroupChange(e) {
+			this.gradelist = [];
+			this.total = 0;
+			this.pass = 0;
+			if (e.length > 0) {
+				e.map(item => {
+					this.gradelist.push({
+						typename: item,
+						grade: 0,
+						count: 0
+					});
+				});
+			} else {
+				this.gradelist = [];
+			}
+		},
+		gradeChange(event, index) {
+			setTimeout(() => {
+				let value = event;
+				let patrn;
+				let endvalue = '';
+				if (value.length == 1) {
+					patrn = /[^\d]/g;
+					endvalue = value.replace(patrn, '');
+				} else {
+					endvalue = this.ChangeFloatValue(value);
+				}
+				this.gradelist[index].grade = endvalue;
+			}, 50);
+		},
+		gradeBlur(event, index) {
+			let value = event;
+			if (value == '' || value == '0.') {
+				this.gradelist[index].grade = 0;
+			}
+			let total = 0;
+			this.gradelist.map(item => {
+				total += item.grade * item.count;
+			});
+			this.total = total;
+			this.pass = Math.ceil(total * 0.6);
+		},
+		countChange(event, index) {
+			setTimeout(() => {
+				let value = event;
+				let patrn;
+				let endvalue = '';
+				if (value.length == 1) {
+					patrn = /[^\d]/g;
+					endvalue = value.replace(patrn, '');
+				} else {
+					endvalue = this.ChangeNumValue(value);
+				}
+				this.gradelist[index].count = endvalue;
+			}, 50);
+		},
+		countBlur(event, index) {
+			let value = event;
+			if (value == '') {
+				this.gradelist[index].count = 0;
+			}
+			let total = 0;
+			this.gradelist.map(item => {
+				total += item.grade * item.count;
+			});
+			this.total = total;
+			this.pass = Math.ceil(total * 0.6);
+		},
+
+		// 合格分值
+		passChange(event) {
+			setTimeout(() => {
+				let value = event;
+				let patrn;
+				let endvalue = '';
+				if (value.length == 1) {
+					patrn = /[^\d]/g;
+					endvalue = value.replace(patrn, '');
+				} else {
+					endvalue = this.ChangeFloatValue(value);
+				}
+				if (endvalue > this.total) {
+					this.$refs.uToast.show({
+						title: '合格分不能大于总分',
+						type: 'warning'
+					});
+					this.pass = this.total;
+				} else {
+					this.pass = endvalue;
+				}
+			}, 50);
+		},
+		passBlur(event) {
+			let value = event;
+			if (value == '' || value == '0.') {
+				this.pass = 0;
+			}
+		},
+		//考试说明
+		explainChange() {
+			this.explainPart = this.explain;
+			this.explainShow = true;
+		},
+		explainConfirm() {
+			this.explain = this.explainPart;
+			this.explainShow = false;
+		},
+
+		// 整数
+		ChangeNumValue(tmpVal) {
+			if (tmpVal) {
+				let s = tmpVal.substring(0, 1);
+				let t = tmpVal.substring(1, tmpVal.length);
+				if (s == 0) {
+					return t;
+				}
+				var tmpVal = tmpVal.replace(/[^\d]/g, '');
+				return tmpVal;
+			} else {
+				return '';
+			}
+		},
+		//一位小数
+		ChangeFloatValue(tmpVal) {
+			if (tmpVal) {
+				let s = tmpVal.substring(0, 1);
+				let t = tmpVal.substring(1, 2);
+				if (s == 0 && t != '.') {
+					return t;
+				}
+				var tmpVal = tmpVal.replace(/[^\d\.]/g, '');
+				var reg = /^(0|([1-9]\d*))(\.\d{1})?$/; //正则验证保留 最多允许后输入一位小数
+				if (!reg.test(tmpVal)) {
+					tmpVal = tmpVal + '';
+					tmpVal = tmpVal.substring(0, tmpVal.indexOf('.') + 2);
+					var n = tmpVal.split('.').length - 1;
+					if (n > 1) {
+						tmpVal = tmpVal.substring(0, tmpVal.indexOf('.'));
+					}
+				}
+				return tmpVal;
+			} else {
+				return '';
+			}
+		}
+	}
+};
+</script>
+
+<style lang="less" scoped>
+/deep/.u-checkbox {
+	margin: 0;
+}
+
+.main {
+}
+
+.contain {
+	height: calc(100vh - 150px);
+	overflow-y: scroll;
+}
+
+.model {
+	padding: 30rpx;
+
+	.number {
+		display: flex;
+		align-items: center;
+		margin: 0 auto;
+		width: 500rpx;
+
+		input {
+			width: 100%;
+			height: 60rpx;
+			flex: 1;
+			text-align: center;
+			font-size: 26rpx;
+			border: 1px solid #eeeeee;
+			border-radius: 10rpx;
+		}
+
+		text {
+			margin: 0 10rpx;
+			color: #999999;
+		}
+	}
+}
+
+.Model {
+	.roleAction {
+		position: fixed;
+		bottom: 0;
+		height: 100rpx;
+		line-height: 100rpx;
+		display: flex;
+		justify-content: space-around;
+		align-items: center;
+		font-size: 32rpx;
+		width: 100%;
+		border-top: 2rpx solid #f6f6f6;
+		background: #ffffff;
+		z-index: 999;
+
+		.cancel {
+			width: 40%;
+			border: 2rpx solid #dedede;
+			color: #606266;
+			text-align: center;
+			height: 80rpx;
+			line-height: 80rpx;
+			border-radius: 80rpx;
+		}
+
+		.sure {
+			width: 40%;
+			color: #ffffff;
+			background: #4abdb4;
+			text-align: center;
+			height: 80rpx;
+			line-height: 80rpx;
+			border: 2rpx solid #4abdb4;
+			border-radius: 80rpx;
+		}
+	}
+
+	.toptitle {
+		height: 90rpx;
+		line-height: 90rpx;
+		background: #4abdb4;
+		color: #ffffff;
+		font-size: 34rpx;
+		text-align: center;
+		position: fixed;
+		top: 0rpx;
+		width: 100%;
+		z-index: 999;
+	}
+
+	.collapsePart {
+		padding: 100rpx 0;
+		background: #ffffff;
+		width: 100%;
+		position: relative;
+
+		.u-collapse-head {
+			display: flex;
+			justify-content: flex-start;
+			align-items: center;
+			color: #333333;
+			font-size: 28rpx;
+			line-height: 1;
+			padding: 10rpx 20rpx 10rpx 6rpx;
+			text-align: left;
+			padding-left: 60rpx;
+		}
+
+		.u-collapse-title {
+			flex: 1;
+			width: 100%;
+			line-height: 60rpx;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			-webkit-box-orient: vertical;
+		}
+
+		.u-arrow-down-icon {
+			transition: all 0.3s;
+			margin-right: 20rpx;
+			margin-left: 14rpx;
+		}
+
+		.u-arrow-down-icon-active {
+			transform: rotate(180deg);
+			transform-origin: center center;
+		}
+
+		.u-collapse-body {
+			overflow: scroll;
+			transition: all 0.3s;
+		}
+
+		.u-collapse-content {
+			font-size: 26rpx;
+			color: #666;
+			text-align: left;
+			padding-left: 120rpx;
+
+			.scroll-part {
+				height: 50vh;
+			}
+
+			.range-part {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 20rpx 0;
+			}
+
+			.range {
+				margin-left: 30rpx;
+				width: calc(30vw - 80rpx);
+			}
+
+			.gray {
+				color: #999999;
+			}
+		}
+	}
+}
+
+.content {
+	background: #ffffff;
+
+	.list {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 10px 16px;
+		color: #333333;
+		font-size: 30rpx;
+
+		.right {
+			display: flex;
+			justify-content: flex-end;
+			align-items: center;
+
+			.grade {
+				display: flex;
+				align-items: center;
+				margin-left: 30rpx;
+
+				.input {
+					width: 100rpx;
+				}
+
+				text {
+					margin: 0 10rpx;
+					color: #999999;
+				}
+			}
+		}
+	}
+}
+
+.action {
+	position: fixed;
+	width: 100%;
+	background: #ffffff;
+	bottom: 0;
+	z-index: 99;
+
+	.bottom {
+		display: flex;
+		justify-content: space-around;
+		align-items: center;
+		height: 100rpx;
+		line-height: 100rpx;
+		text-align: center;
+		color: #ffffff;
+
+		.cancel {
+			width: 40%;
+			height: 80rpx;
+			line-height: 80rpx;
+			border-radius: 40rpx;
+			border: 2rpx solid #dedede;
+			color: #606266;
+		}
+
+		.save {
+			width: 40%;
+			height: 80rpx;
+			line-height: 80rpx;
+			background: #4abdb4;
+			border-radius: 40rpx;
+		}
+	}
+}
+</style>
